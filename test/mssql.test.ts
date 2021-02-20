@@ -26,7 +26,7 @@ const config: mssql.config = {
   password: process.env.MSSQL_PASSWORD || 'P@ssw0rd',
   server: process.env.MSSQL_HOST || 'localhost',  
   database: process.env.MSSQL_DATABASE || 'tempdb',
-  port: Number(process.env.MSSQL_PORT) || 1433,
+  port: 1433,
   options: {
     enableArithAbort: true,
     encrypt: false
@@ -87,17 +87,25 @@ describe('mssql@6.x', () => {
                 logger.debug('SQL Connection established...');
             }
         });
-        
-          pool.on('error', err => {
-            console.log(" err " + err);
+
+        pool.on('error', err => {
+          console.log(" err " + err);
+        });
+
+          pool.connect().then((result) => {
+            const request = new mssql.Request(pool);
+            request.query('select 1 as number').then((result) => {
+              console.log(result);
+              done();
+            }).catch(err => {
+              console.log(err);
+              done();
+            }).catch(err => {
+              console.log(err);
+              done();
+            });
           });
-          const request = new mssql.Request(pool);
-          request.query('select 1 as number').then((result) => {
-            console.log(" result " + result);
-          }).catch(err => {              
-            console.log(err);
-          });          
-          done();
+
         });
 
       });
