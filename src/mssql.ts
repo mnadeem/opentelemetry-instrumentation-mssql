@@ -7,6 +7,8 @@ import { BasePlugin } from '@opentelemetry/core';
 
 export class MssqlPlugin extends BasePlugin <typeof mssql> {
 
+  static readonly COMPONENT = 'mssql';
+
   //private _enabled = false;
 
   constructor(readonly moduleName: string) {
@@ -47,6 +49,8 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
   }
 
   protected unpatch(): void {
-      throw new Error('Method not implemented.');
+      //throw new Error('Method not implemented.');
   }
 }
+
+export const plugin = new MssqlPlugin(MssqlPlugin.COMPONENT);
