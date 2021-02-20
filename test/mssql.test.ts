@@ -74,11 +74,18 @@ describe('mssql@6.x', () => {
         it('should name the span accordingly ', done => {
 
           const pool = new mssql.ConnectionPool(config);
-          const request  = pool.request();
-          request.query('SELECT * FROM dbo.flight f WHERE f.id=1').then((result) => {
-            console.log(" result " + result);
-          }).catch(err => {              
-            console.log(err);
+          const poolConnect = pool.connect();
+
+          pool.on('error', err => {
+            console.log(" err " + err);
+          });
+          poolConnect.then((result) => {
+            const request = pool.request(); // or: new sql.Request(pool1)
+            request.query('select 1 as number').then((result) => {
+              console.log(" result " + result);
+            }).catch(err => {              
+              console.log(err);
+            });
           });
           done();
         });
