@@ -11,6 +11,7 @@ import * as mssql from 'mssql';
 
 
 import { MssqlPlugin, plugin } from '../src/mssql';
+import { request } from 'http';
 
 /** 
 const port = process.env.MSSQL_PORT || 1433;
@@ -73,10 +74,13 @@ describe('mssql@6.x', () => {
         it('should name the span accordingly ', done => {
 
           const pool = new mssql.ConnectionPool(config);
-          pool.request();
-
+          const request  = pool.request();
+          request.query('SELECT * FROM dbo.flight f WHERE f.id=1').then((result) => {
+            console.log(" result " + result);
+          }).catch(err => {              
+            console.log(err);
+          });
           done();
-
         });
 
       });

@@ -34,15 +34,7 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
       thisPlugin._logger.debug('MssqlPlugin#patch: patched mssql ConnectionPool');
       return function createPool(_config: string | mssql.config) {
         const pool = new originalConnectionPool(...arguments);
-        
         shimmer.wrap(pool, 'request', thisPlugin._patchRequest(pool));
-        /** 
-        shimmer.wrap(
-          pool,
-          'getConnection',
-          thisPlugin._patchGetConnection(pool)
-        );*/
-
         return pool;
       };
     };
@@ -54,9 +46,25 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
       thisPlugin._logger.debug(
         'MssqlPlugin#patch: patched mssql pool request'
       );
-      return function Request() {
-        const request: Request = originalRequest();
+      return function request() {
+        const request: mssql.Request = originalRequest();
+        
+        shimmer.wrap(request, 'query', thisPlugin._patchQuery(request));
         return request;
+      };
+    };
+  }
+  
+  private _patchQuery(request: mssql.Request) {
+    return (originalQuery: Function) => {
+      const thisPlugin = this;
+      thisPlugin._logger.debug(
+        'MssqlPlugin#patch: patched mssql request query'
+      );
+      return function query(command: string | TemplateStringsArray): Promise<mssql.IResult<any>> {
+        //const query: Promise<mssql.IResult<any>> = originalQuery(command);
+        console.log(arguments);
+        return originalQuery.apply(request, arguments); 
       };
     };
   }
