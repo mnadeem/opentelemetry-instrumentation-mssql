@@ -9,14 +9,14 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
 
   static readonly COMPONENT = 'mssql';
 
-  //private _enabled = false;
+  private _enabled = false;
 
   constructor(readonly moduleName: string) {
     super('opentelemetry-plugin-mssql', VERSION);
   }
 
   protected patch(): typeof mssql {
-    //this._enabled = true;
+    this._enabled = true;
 
     shimmer.wrap(
       this._moduleExports,
@@ -29,27 +29,40 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
 
   // global export function
   private _patchCreatePool() {
-    return (originalCreatePool: any) => {
+    return (originalConnectionPool: any) => {
       const thisPlugin = this;
-      thisPlugin._logger.debug('MssqlPlugin#patch: patched mysql createPool');
-      return function createPool(_config: mssql.ConnectionPool) {
-        const pool = new originalCreatePool(...arguments);
-        console.log(arguments);
-
+      thisPlugin._logger.debug('MssqlPlugin#patch: patched mssql ConnectionPool');
+      return function createPool(_config: string | mssql.config) {
+        const pool = new originalConnectionPool(...arguments);
+        
+        shimmer.wrap(pool, 'request', thisPlugin._patchRequest(pool));
         /** 
-        shimmer.wrap(pool, 'query', thisPlugin._patchQuery(pool));
         shimmer.wrap(
           pool,
           'getConnection',
           thisPlugin._patchGetConnection(pool)
-        );
-      */
+        );*/
+
         return pool;
       };
     };
   }
 
+  private _patchRequest(pool: mssql.ConnectionPool) {
+    return (originalRequest: any) => {
+      const thisPlugin = this;
+      thisPlugin._logger.debug(
+        'MssqlPlugin#patch: patched mssql pool request'
+      );
+      return function Request() {
+        const request: Request = originalRequest();
+        return request;
+      };
+    };
+  }
+
   protected unpatch(): void {
+    this._enabled = false;
     //throw new Error('Method not implemented.');
   }
 }

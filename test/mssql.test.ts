@@ -6,10 +6,8 @@ import {
     SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
 
-
 import * as assert from 'assert';
 import * as mssql from 'mssql';
-import ConnectionPool from 'mssql';
 
 
 import { MssqlPlugin, plugin } from '../src/mssql';
@@ -75,7 +73,7 @@ describe('mssql@6.x', () => {
         it('should name the span accordingly ', done => {
 
           const pool = new mssql.ConnectionPool(config);
-          console.log(pool);
+          pool.request();
 
           done();
 
