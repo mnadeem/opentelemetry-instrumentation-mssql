@@ -24,9 +24,13 @@ const password = process.env.MSSQL_PASSWORD || 'P@ssw0rd';
 const config: mssql.config = {
   user: process.env.MSSQL_USER || 'sa',
   password: process.env.MSSQL_PASSWORD || 'P@ssw0rd',
-  server: process.env.MSSQL_HOST || '127.0.0.1',  
+  server: process.env.MSSQL_HOST || 'localhost',  
   database: process.env.MSSQL_DATABASE || 'tempdb',
-  port: Number(process.env.MSSQL_PORT) || 1433
+  port: Number(process.env.MSSQL_PORT) || 1433,
+  options: {
+    enableArithAbort: true,
+    encrypt: false
+  }
 };
 
 describe('mssql@6.x', () => {
@@ -73,20 +77,26 @@ describe('mssql@6.x', () => {
 
         it('should name the span accordingly ', done => {
 
-          const pool = new mssql.ConnectionPool(config);
-          const poolConnect = pool.connect();
+          //const pool = new mssql.ConnectionPool(config);
+          //const poolConnect = pool.connect();
 
+          const pool = new mssql.ConnectionPool(config, (err) => {
+            if (err) {
+                logger.error("SQL Connection Establishment ERROR: %s", err);
+            } else {
+                logger.debug('SQL Connection established...');
+            }
+        });
+        
           pool.on('error', err => {
             console.log(" err " + err);
           });
-          poolConnect.then((result) => {
-            const request = pool.request(); // or: new sql.Request(pool1)
-            request.query('select 1 as number').then((result) => {
-              console.log(" result " + result);
-            }).catch(err => {              
-              console.log(err);
-            });
-          });
+          const request = new mssql.Request(pool);
+          request.query('select 1 as number').then((result) => {
+            console.log(" result " + result);
+          }).catch(err => {              
+            console.log(err);
+          });          
           done();
         });
 
