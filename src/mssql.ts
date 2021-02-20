@@ -30,7 +30,7 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
     return (originalCreatePool: Function) => {
       const thisPlugin = this;
       thisPlugin._logger.debug('MysqlPlugin#patch: patched mysql createPool');
-      return function createPool(_config: string | mssql.ConnectionPool) {
+      return function createPool(_config: mssql.ConnectionPool) {
         const pool = originalCreatePool(...arguments);
 
         /** 
