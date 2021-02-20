@@ -29,11 +29,12 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
 
   // global export function
   private _patchCreatePool() {
-    return (originalCreatePool: Function) => {
+    return (originalCreatePool: any) => {
       const thisPlugin = this;
-      thisPlugin._logger.debug('MysqlPlugin#patch: patched mysql createPool');
+      thisPlugin._logger.debug('MssqlPlugin#patch: patched mysql createPool');
       return function createPool(_config: mssql.ConnectionPool) {
-        const pool = originalCreatePool(...arguments);
+        const pool = new originalCreatePool(...arguments);
+        console.log(arguments);
 
         /** 
         shimmer.wrap(pool, 'query', thisPlugin._patchQuery(pool));
@@ -49,7 +50,7 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
   }
 
   protected unpatch(): void {
-      //throw new Error('Method not implemented.');
+    //throw new Error('Method not implemented.');
   }
 }
 

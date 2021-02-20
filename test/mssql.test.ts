@@ -1,29 +1,38 @@
-import { NoopLogger, StatusCode, context, setSpan } from '@opentelemetry/api';
+import { NoopLogger, context } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
     InMemorySpanExporter,
-    ReadableSpan,
     SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
-import {
-    DatabaseAttribute,
-    GeneralAttribute,
-} from '@opentelemetry/semantic-conventions';
+
 
 import * as assert from 'assert';
 import * as mssql from 'mssql';
+import ConnectionPool from 'mssql';
+
+
 import { MssqlPlugin, plugin } from '../src/mssql';
 
-const port = Number(process.env.MSSQL_PORT) || 33306;
-const database = process.env.MSSQL_DATABASE || 'test_db';
-const host = process.env.MSSQL_HOST || '127.0.0.1';
-const user = process.env.MSSQL_USER || 'otel';
-const password = process.env.MSSQL_PASSWORD || 'secret';
+/** 
+const port = process.env.MSSQL_PORT || 1433;
+const database = process.env.MSSQL_DATABASE || 'tempdb';
+const server = process.env.MSSQL_HOST || '127.0.0.1';  
+const user = process.env.MSSQL_USER || 'sa';
+const password = process.env.MSSQL_PASSWORD || 'P@ssw0rd';
+*/
+
+const config: mssql.config = {
+  user: process.env.MSSQL_USER || 'sa',
+  password: process.env.MSSQL_PASSWORD || 'P@ssw0rd',
+  server: process.env.MSSQL_HOST || '127.0.0.1',  
+  database: process.env.MSSQL_DATABASE || 'tempdb',
+  port: Number(process.env.MSSQL_PORT) || 1433
+};
 
 describe('mssql@6.x', () => {
     let contextManager: AsyncHooksContextManager;
-    let pool: mssql.ConnectionPool;
+
     const provider = new NodeTracerProvider({ plugins: {} });
     const logger = new NoopLogger();
     const memoryExporter = new InMemorySpanExporter();
@@ -60,4 +69,18 @@ describe('mssql@6.x', () => {
       it('should have correct moduleName', () => {
         assert.strictEqual(plugin.moduleName, 'mssql');
       });
+
+      describe('when the query is a string', () => {
+
+        it('should name the span accordingly ', done => {
+
+          const pool = new mssql.ConnectionPool(config);
+          console.log(pool);
+
+          done();
+
+        });
+
+      });
+    
 });
