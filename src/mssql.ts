@@ -49,7 +49,7 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
   }
 
   private _patchRequest(pool: mssql.ConnectionPool) {
-    return (originalRequest: any) => {
+    return (originalRequest: Function) => {
       const thisPlugin = this;
       thisPlugin._logger.debug(
         'MssqlPlugin#patch: patched mssql pool request'
