@@ -7,6 +7,7 @@
         "declaration": true,
         "declarationMap": true,
         "forceConsistentCasingInFileNames": true,
+        "allowSyntheticDefaultImports": true,
         "module": "commonjs",
         "noEmitOnError": true,
         "noFallthroughCasesInSwitch": true,
