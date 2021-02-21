@@ -4,9 +4,9 @@ import { VERSION } from './version';
 import * as shimmer from 'shimmer';
 
 import { BasePlugin } from '@opentelemetry/core';
-import { StatusCode, Span, SpanKind } from '@opentelemetry/api';
+import { StatusCode, SpanKind } from '@opentelemetry/api';
 import { DatabaseAttribute } from '@opentelemetry/semantic-conventions';
-import { getConnectionAttributes, getDbStatement, getSpanName } from './utils';
+import { getConnectionAttributes, getSpanName } from './Spans';
 
 export class MssqlPlugin extends BasePlugin <typeof mssql> {
 
