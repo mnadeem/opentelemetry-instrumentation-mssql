@@ -87,23 +87,34 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
           kind: SpanKind.CLIENT,
           attributes: {
             ...MssqlPlugin.COMMON_ATTRIBUTES,
-            ...getConnectionAttributes(thisPlugin.mssqlConfig),
+            ...getConnectionAttributes(thisPlugin.mssqlConfig)
           },
         });
+        
+        span.setAttribute(DatabaseAttribute.DB_STATEMENT, thisPlugin.format(command));
 
         const result = originalQuery.apply(request, arguments); 
 
-        result
+        result        
         .catch((error: { message: any; }) => {
           span.setStatus({
             code: StatusCode.ERROR,
             message: error.message,
           })
-        }).finally(() => span.end());
+        }).finally(() => {         
+          span.end()
+        });
 
         return result; 
       };
     };
+  }
+
+  private format(command: string | TemplateStringsArray) {
+    if (typeof command === 'object') {
+      return command[0];
+    }
+    return command;
   }
 
   protected unpatch(): void {

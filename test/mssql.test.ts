@@ -98,6 +98,7 @@ describe('mssql@6.x', () => {
                 //console.log(result);
               }).finally(() => {
                 const spans = memoryExporter.getFinishedSpans();
+                console.log(spans[0]);
                 assert.strictEqual(spans[0].name, 'SELECT');
                 done();
               });
