@@ -98,16 +98,15 @@ describe('mssql@6.x', () => {
               console.log(result);
               done();
             }).catch(err => {
-              console.log(err);
+              //console.log(err);
               done();
             }).catch(err => {
-              console.log(err);
+              //console.log(err);
               done();
             });
           });
 
         });
-
       });
     
 });
