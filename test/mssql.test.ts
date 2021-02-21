@@ -1,4 +1,4 @@
-import { NoopLogger, context, setSpan } from '@opentelemetry/api';
+import { context, setSpan } from '@opentelemetry/api';
 import { ConsoleLogger } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';

@@ -27,7 +27,7 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
     };
 
     protected _config!: Config;
-    private mssqlConfig: mssql.config = null;
+    private mssqlConfig: mssql.config = {user: "", password: "", server: ""};
 
     constructor(config: Config = {}) {
         super('opentelemetry-plugin-mssql', VERSION, Object.assign({}, config));
