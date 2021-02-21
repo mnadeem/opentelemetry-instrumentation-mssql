@@ -1,22 +1,12 @@
-import { NoopLogger, StatusCode, context, setSpan } from '@opentelemetry/api';
+import { NoopLogger, context, setSpan } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
-import {
-    InMemorySpanExporter,
-    SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+import { InMemorySpanExporter, SimpleSpanProcessor } from '@opentelemetry/tracing';
 
 import * as assert from 'assert';
 import * as mssql from 'mssql';
+import * as Docker from './Docker';
 import { MssqlPlugin, plugin } from '../src/mssql';
-
-/** 
-const port = process.env.MSSQL_PORT || 1433;
-const database = process.env.MSSQL_DATABASE || 'tempdb';
-const server = process.env.MSSQL_HOST || '127.0.0.1';  
-const user = process.env.MSSQL_USER || 'sa';
-const password = process.env.MSSQL_PASSWORD || 'P@ssw0rd';
-*/
 
 const config: mssql.config = {
   user: process.env.MSSQL_USER || 'sa',
@@ -31,6 +21,11 @@ const config: mssql.config = {
 };
 
 describe('mssql@6.x', () => {
+
+    const testMssql = process.env.RUN_MSSQL_TESTS; // For CI: assumes local mysql db is already available
+    const testMssqlLocally = process.env.RUN_MSSQL_TESTS_LOCAL; // For local: spins up local mysql db via docker
+    const shouldTest = testMssql || testMssqlLocally; // Skips these tests if false (default)
+  
     let contextManager: AsyncHooksContextManager;
 
     const provider = new NodeTracerProvider({ plugins: {} });
@@ -39,12 +34,31 @@ describe('mssql@6.x', () => {
     let pool: mssql.ConnectionPool;
 
     before(function (done) {
+        if (!shouldTest) {
+          // this.skip() workaround
+          // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
+          this.test!.parent!.pending = true;
+          console.log('Skipping tests...');
+          this.skip();
+        }
         provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
-        done();
+        if (testMssqlLocally) {
+          console.log('Starting mssql...');
+          Docker.start('mssql');
+          // wait 15 seconds for docker container to start
+          this.timeout(20000);
+          setTimeout(done, 15000);
+        } else {
+          done();
+        }
     });
 
     after(function () {
-
+      if (testMssqlLocally) {
+        this.timeout(5000);
+        console.log('Stopping mssql...');
+        Docker.cleanUp('mssql');
+      }
     });
 
     beforeEach(async () => {
