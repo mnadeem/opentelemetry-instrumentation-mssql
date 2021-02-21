@@ -23,7 +23,7 @@ const config: mssql.config = {
 describe('mssql@6.x', () => {
 
     const testMssql = process.env.RUN_MSSQL_TESTS; // For CI: assumes local mysql db is already available
-    const testMssqlLocally = process.env.RUN_MSSQL_TESTS_LOCAL; // For local: spins up local mysql db via docker
+    const testMssqlLocally = process.env.RUN_MSSQL_TESTS_LOCAL || true; // For local: spins up local mysql db via docker
     const shouldTest = testMssql || testMssqlLocally; // Skips these tests if false (default)
   
     let contextManager: AsyncHooksContextManager;
