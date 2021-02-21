@@ -1,4 +1,5 @@
 import { NoopLogger, context, setSpan } from '@opentelemetry/api';
+import { ConsoleLogger } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { InMemorySpanExporter, SimpleSpanProcessor } from '@opentelemetry/tracing';
@@ -6,7 +7,7 @@ import { InMemorySpanExporter, SimpleSpanProcessor } from '@opentelemetry/tracin
 import * as assert from 'assert';
 import * as mssql from 'mssql';
 import * as Docker from './Docker';
-import { MssqlPlugin, plugin } from '../src/mssql';
+import { MssqlInstrumentation } from '../src/mssql';
 
 const config: mssql.config = {
   user: process.env.MSSQL_USER || 'sa',
@@ -19,6 +20,7 @@ const config: mssql.config = {
     encrypt: false
   }
 };
+const instrumentation = new MssqlInstrumentation();
 
 describe('mssql@6.x', () => {
 
@@ -28,8 +30,8 @@ describe('mssql@6.x', () => {
   
     let contextManager: AsyncHooksContextManager;
 
-    const provider = new NodeTracerProvider({ plugins: {} });
-    const logger = new NoopLogger();
+    const provider = new NodeTracerProvider();
+    const logger = new ConsoleLogger();
     const memoryExporter = new InMemorySpanExporter();
     let pool: mssql.ConnectionPool;
 
@@ -42,6 +44,7 @@ describe('mssql@6.x', () => {
           this.skip();
         }
         provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
+        instrumentation.setTracerProvider(provider);
         if (testMssqlLocally) {
           console.log('Starting mssql...');
           Docker.start('mssql');
@@ -64,7 +67,7 @@ describe('mssql@6.x', () => {
     beforeEach(async () => {
         contextManager = new AsyncHooksContextManager().enable();
         context.setGlobalContextManager(contextManager);
-        plugin.enable(mssql, provider, logger);
+        instrumentation.enable();
         
         //start pool        
         pool = new mssql.ConnectionPool(config, (err) => {
@@ -84,7 +87,7 @@ describe('mssql@6.x', () => {
       afterEach(done => {
         context.disable();
         memoryExporter.reset();
-        plugin.disable();
+        instrumentation.disable();
         // end pool
         pool.close().finally(() => {
           done();
@@ -92,11 +95,11 @@ describe('mssql@6.x', () => {
       });
 
       it('should export a plugin', () => {
-        assert(plugin instanceof MssqlPlugin);
+        assert(instrumentation instanceof MssqlInstrumentation);
       });
     
       it('should have correct moduleName', () => {
-        assert.strictEqual(plugin.moduleName, 'mssql');
+        assert.strictEqual(instrumentation.instrumentationName, 'opentelemetry-plugin-mssql');
       });
 
       describe('when the query is a string', () => {

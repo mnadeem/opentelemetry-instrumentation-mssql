@@ -1,120 +1,140 @@
 import type * as mssql from 'mssql';
 
-import { VERSION } from './version';
-import * as shimmer from 'shimmer';
-
-import { BasePlugin } from '@opentelemetry/core';
-import { StatusCode, SpanKind } from '@opentelemetry/api';
 import { DatabaseAttribute } from '@opentelemetry/semantic-conventions';
+import {
+    InstrumentationBase,
+    InstrumentationConfig,
+    InstrumentationModuleDefinition,
+    InstrumentationNodeModuleDefinition,
+    isWrapped
+} from '@opentelemetry/instrumentation';
+
+import {
+    SpanKind,
+    StatusCode,    
+} from '@opentelemetry/api';
+
 import { getConnectionAttributes, getSpanName } from './Spans';
+import { VERSION } from './version';
 
-export class MssqlPlugin extends BasePlugin <typeof mssql> {
+type Config = InstrumentationConfig;
 
-  static readonly COMPONENT = 'mssql';
-  static readonly COMMON_ATTRIBUTES = {
-    [DatabaseAttribute.DB_SYSTEM]: MssqlPlugin.COMPONENT,
-  };
+export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
 
-  private mssqlConfig: mssql.config = null;
+    static readonly COMPONENT = 'mssql';
+    static readonly COMMON_ATTRIBUTES = {
+        [DatabaseAttribute.DB_SYSTEM]: MssqlInstrumentation.COMPONENT,
+    };
 
-  constructor(readonly moduleName: string) {
-    super('opentelemetry-plugin-mssql', VERSION);
-  }
+    protected _config!: Config;
+    private mssqlConfig: mssql.config = null;
 
-  protected patch(): typeof mssql {
+    constructor(config: Config = {}) {
+        super('opentelemetry-plugin-mssql', VERSION, Object.assign({}, config));
+    }
 
-    shimmer.wrap(
-      this._moduleExports,
-      'ConnectionPool',
-      this._patchCreatePool() as any
-    );
+    setConfig(config: Config = {}) {
+        this._config = Object.assign({}, config);
+    }
 
-    shimmer.wrap(
-      this._moduleExports,
-      'Request',
-      this._patchRequest() as any
-    );
+    protected init(): void | InstrumentationModuleDefinition<any> | InstrumentationModuleDefinition<any>[] {
+        const module = new InstrumentationNodeModuleDefinition<typeof mssql>(
+            MssqlInstrumentation.COMPONENT,
+            ['*'],
+            this.patch.bind(this),
+            this.unpatch.bind(this)
+        );
+        return module;
+    }
 
-    return this._moduleExports;
-  }
-
-  // global export function
-  private _patchCreatePool() {
-    return (originalConnectionPool: any) => {
-      const thisPlugin = this;
-      thisPlugin._logger.debug('MssqlPlugin#patch: patching mssql ConnectionPool');
-      return function createPool(_config: string | mssql.config) {
-
-        if (typeof _config === 'object') {
-          thisPlugin.mssqlConfig = _config;
+    protected patch(moduleExports: typeof mssql) {
+        if (moduleExports === undefined || moduleExports === null) {
+            return moduleExports;
         }
 
-        const pool = new originalConnectionPool(...arguments);
-        //shimmer.wrap(pool, 'request', thisPlugin._patchRequest());
-        return pool;
-      };
-    };
-  }
+        this._logger.debug(`applying patch to ${MssqlInstrumentation.COMPONENT}`);
+        this.unpatch(moduleExports);
+        this._wrap(moduleExports, 'ConnectionPool', this._createConnectionPoolPatch.bind(this) as any);
+        this._wrap(moduleExports, 'Request', this._createRequestPatch.bind(this) as any);
 
-  private _patchRequest() {
-    return (originalRequest: any) => {
-      const thisPlugin = this;
-      thisPlugin._logger.debug(
-        'MssqlPlugin#patch: patching mssql pool request'
-      );
-      return function request() {
-        const request: mssql.Request = new originalRequest(...arguments);
-        shimmer.wrap(request, 'query', thisPlugin._patchQuery(request));
-        return request;
-      };
-    };
-  }
-
-  private _patchQuery(request: mssql.Request) {
-    return (originalQuery: Function) => {
-      const thisPlugin = this;
-      thisPlugin._logger.debug(
-        'MssqlPlugin#patch: patching mssql request query'
-      );
-      return function query(command: string | TemplateStringsArray): Promise<mssql.IResult<any>> {
-        const span = thisPlugin._tracer.startSpan(getSpanName(command), {
-          kind: SpanKind.CLIENT,
-          attributes: {
-            ...MssqlPlugin.COMMON_ATTRIBUTES,
-            ...getConnectionAttributes(thisPlugin.mssqlConfig)
-          },
-        });
-        span.setAttribute(DatabaseAttribute.DB_STATEMENT, thisPlugin.formatDbStatement(command));
-
-        const result = originalQuery.apply(request, arguments); 
-
-        result        
-        .catch((error: { message: any; }) => {
-          span.setStatus({
-            code: StatusCode.ERROR,
-            message: error.message,
-          })
-        }).finally(() => {         
-          span.end()
-        });
-
-        return result; 
-      };
-    };
-  }
-
-  private formatDbStatement(command: string | TemplateStringsArray) {
-    if (typeof command === 'object') {
-      return command[0];
+        return moduleExports;
     }
-    return command;
-  }
 
-  protected unpatch(): void {
-    shimmer.unwrap(this._moduleExports, 'ConnectionPool');
-    shimmer.unwrap(this._moduleExports, 'Request');
-  }
+    private _createConnectionPoolPatch() {
+        return (original: any) => {
+            const thisPlugin = this;
+            thisPlugin._logger.debug('MssqlPlugin#patch: patching mssql ConnectionPool');
+            return function createPool(_config: string | mssql.config) {
 
+                if (typeof _config === 'object') {
+                    thisPlugin.mssqlConfig = _config;
+                }
+                const pool = new original(...arguments);          
+                return pool;
+            };
+        };
+    }
+
+    private _createRequestPatch() {
+        return (originalRequest: any) => {
+            const thisPlugin = this;
+            thisPlugin._logger.debug(
+                'MssqlPlugin#patch: patching mssql pool request'
+            );
+            return function request() {
+                const request: mssql.Request = new originalRequest(...arguments);
+                thisPlugin._wrap(request, 'query', thisPlugin._patchQuery(request));
+                return request;
+            };
+        };
+    }
+
+    private _patchQuery(request: mssql.Request) {
+        return (originalQuery: Function) => {
+            const thisPlugin = this;
+            thisPlugin._logger.debug(
+                'MssqlPlugin#patch: patching mssql request query'
+            );
+            return function query(command: string | TemplateStringsArray): Promise<mssql.IResult<any>> {
+                const span = thisPlugin.tracer.startSpan(getSpanName(command), {
+                    kind: SpanKind.CLIENT,
+                    attributes: {
+                        ...MssqlInstrumentation.COMMON_ATTRIBUTES,
+                        ...getConnectionAttributes(thisPlugin.mssqlConfig)
+                    },
+                });
+                span.setAttribute(DatabaseAttribute.DB_STATEMENT, thisPlugin.formatDbStatement(command));
+
+                const result = originalQuery.apply(request, arguments);
+
+                result
+                    .catch((error: { message: any; }) => {
+                        span.setStatus({
+                            code: StatusCode.ERROR,
+                            message: error.message,
+                        })
+                    }).finally(() => {
+                        span.end()
+                    });
+
+                return result;
+            };
+        };
+    }
+
+    private formatDbStatement(command: string | TemplateStringsArray) {
+        if (typeof command === 'object') {
+            return command[0];
+        }
+        return command;
+    }
+
+    protected unpatch(moduleExports: typeof mssql): void {
+        if (isWrapped(moduleExports.ConnectionPool)) {
+            this._unwrap(moduleExports, 'ConnectionPool');
+        }
+        if (isWrapped(moduleExports.Request)) {
+            this._unwrap(moduleExports, 'Request');
+        }
+    }
 }
-
-export const plugin = new MssqlPlugin(MssqlPlugin.COMPONENT);
