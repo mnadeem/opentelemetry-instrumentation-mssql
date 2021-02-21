@@ -36,6 +36,7 @@ describe('mssql@6.x', () => {
     const provider = new NodeTracerProvider({ plugins: {} });
     const logger = new NoopLogger();
     const memoryExporter = new InMemorySpanExporter();
+    let pool: mssql.ConnectionPool;
 
     before(function (done) {
         provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
@@ -46,12 +47,25 @@ describe('mssql@6.x', () => {
 
     });
 
-    beforeEach(() => {
+    beforeEach(async () => {
         contextManager = new AsyncHooksContextManager().enable();
         context.setGlobalContextManager(contextManager);
         plugin.enable(mssql, provider, logger);
-
-        //start pool        
+        
+        //start pool 
+        
+        pool = new mssql.ConnectionPool(config, (err) => {
+          if (err) {
+            logger.error("SQL Connection Establishment ERROR: %s", err);
+          } else {
+            logger.debug('SQL Connection established...');
+          }
+        });
+        await pool.connect()
+        pool.on('error', err => {
+          console.log(" err " + err);
+        });
+        
       });
     
       afterEach(done => {
@@ -59,7 +73,9 @@ describe('mssql@6.x', () => {
         memoryExporter.reset();
         plugin.disable();
         // end pool
-        done();
+        pool.close().finally(() => {
+          done();
+        });        
       });
 
       it('should export a plugin', () => {
@@ -74,28 +90,13 @@ describe('mssql@6.x', () => {
 
         it('should name the span accordingly ', done => {
 
-          //const pool = new mssql.ConnectionPool(config);
-          //const poolConnect = pool.connect();
-
-          const pool = new mssql.ConnectionPool(config, (err) => {
-            if (err) {
-              logger.error("SQL Connection Establishment ERROR: %s", err);
-            } else {
-              logger.debug('SQL Connection established...');
-            }
-          });
-
-          pool.on('error', err => {
-            console.log(" err " + err);
-          });
-
           pool.connect().then((result) => {
 
             const span = provider.getTracer('default').startSpan('test span');
             context.with(setSpan(context.active(), span), () => {
               const request = new mssql.Request(pool);
               request.query('SELECT 1 as number').then((result) => {
-                console.log(result);
+                //console.log(result);
               }).finally(() => {
                 const spans = memoryExporter.getFinishedSpans();
                 assert.strictEqual(spans[0].name, 'SELECT');
