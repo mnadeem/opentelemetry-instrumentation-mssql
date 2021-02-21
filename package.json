@@ -1,5 +1,5 @@
 {
-  "name": "opentelemetry-plugin-mssql",
+  "name": "opentelemetry-instrumentation-mssql",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",

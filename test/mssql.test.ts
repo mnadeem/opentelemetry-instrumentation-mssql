@@ -99,7 +99,7 @@ describe('mssql@6.x', () => {
       });
     
       it('should have correct moduleName', () => {
-        assert.strictEqual(instrumentation.instrumentationName, 'opentelemetry-plugin-mssql');
+        assert.strictEqual(instrumentation.instrumentationName, 'opentelemetry-instrumentation-mssql');
       });
 
       describe('when the query is a string', () => {
