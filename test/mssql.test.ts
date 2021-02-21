@@ -1,4 +1,4 @@
-import { NoopLogger, context } from '@opentelemetry/api';
+import { NoopLogger, StatusCode, context, setSpan } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -8,10 +8,7 @@ import {
 
 import * as assert from 'assert';
 import * as mssql from 'mssql';
-
-
 import { MssqlPlugin, plugin } from '../src/mssql';
-import { request } from 'http';
 
 /** 
 const port = process.env.MSSQL_PORT || 1433;
@@ -82,29 +79,31 @@ describe('mssql@6.x', () => {
 
           const pool = new mssql.ConnectionPool(config, (err) => {
             if (err) {
-                logger.error("SQL Connection Establishment ERROR: %s", err);
+              logger.error("SQL Connection Establishment ERROR: %s", err);
             } else {
-                logger.debug('SQL Connection established...');
+              logger.debug('SQL Connection established...');
             }
-        });
+          });
 
-        pool.on('error', err => {
-          console.log(" err " + err);
-        });
+          pool.on('error', err => {
+            console.log(" err " + err);
+          });
 
           pool.connect().then((result) => {
-            const request = new mssql.Request(pool);
-            request.query('select 1 as number').then((result) => {
-              console.log(result);
-              done();
-            }).catch(err => {
-              //console.log(err);
-              done();
-            }).catch(err => {
-              //console.log(err);
-              done();
+
+            const span = provider.getTracer('default').startSpan('test span');
+            context.with(setSpan(context.active(), span), () => {
+              const request = new mssql.Request(pool);
+              request.query('SELECT 1 as number').then((result) => {
+                console.log(result);
+              }).finally(() => {
+                const spans = memoryExporter.getFinishedSpans();
+                assert.strictEqual(spans[0].name, 'SELECT');
+                done();
+              });
+
             });
-          });
+          })
 
         });
       });

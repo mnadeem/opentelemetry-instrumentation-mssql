@@ -4,12 +4,19 @@ import { VERSION } from './version';
 import * as shimmer from 'shimmer';
 
 import { BasePlugin } from '@opentelemetry/core';
+import { StatusCode, Span, SpanKind } from '@opentelemetry/api';
+import { DatabaseAttribute } from '@opentelemetry/semantic-conventions';
+import { getConnectionAttributes, getDbStatement, getSpanName } from './utils';
 
 export class MssqlPlugin extends BasePlugin <typeof mssql> {
 
   static readonly COMPONENT = 'mssql';
+  static readonly COMMON_ATTRIBUTES = {
+    [DatabaseAttribute.DB_SYSTEM]: MssqlPlugin.COMPONENT,
+  };
 
   private _enabled = false;
+  private mssqlConfig: mssql.config = null;
 
   constructor(readonly moduleName: string) {
     super('opentelemetry-plugin-mssql', VERSION);
@@ -39,6 +46,11 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
       const thisPlugin = this;
       thisPlugin._logger.debug('MssqlPlugin#patch: patched mssql ConnectionPool');
       return function createPool(_config: string | mssql.config) {
+
+        if (typeof _config === 'object') {
+          thisPlugin.mssqlConfig = _config;
+        }
+        
         const pool = new originalConnectionPool(...arguments);
         //shimmer.wrap(pool, 'request', thisPlugin._patchRequest());
         return pool;
@@ -60,7 +72,7 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
       };
     };
   }
-  
+
   private _patchQuery(request: mssql.Request) {
     return (originalQuery: Function) => {
       const thisPlugin = this;
@@ -69,11 +81,31 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
       );
       return function query(command: string | TemplateStringsArray): Promise<mssql.IResult<any>> {
         //const query: Promise<mssql.IResult<any>> = originalQuery(command);
-        console.log(arguments);
-        return originalQuery.apply(request, arguments); 
+        //console.log(arguments);
+        //console.log(thisPlugin.mssqlConfig);
+        const span = thisPlugin._tracer.startSpan(getSpanName(command), {
+          kind: SpanKind.CLIENT,
+          attributes: {
+            ...MssqlPlugin.COMMON_ATTRIBUTES,
+            ...getConnectionAttributes(thisPlugin.mssqlConfig),
+          },
+        });
+
+        const result = originalQuery.apply(request, arguments); 
+
+        result
+        .catch((error: { message: any; }) => {
+          span.setStatus({
+            code: StatusCode.ERROR,
+            message: error.message,
+          })
+        }).finally(() => span.end());
+
+        return result; 
       };
     };
   }
+
 
   protected unpatch(): void {
     this._enabled = false;
