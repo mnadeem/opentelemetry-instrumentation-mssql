@@ -15,7 +15,6 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
     [DatabaseAttribute.DB_SYSTEM]: MssqlPlugin.COMPONENT,
   };
 
-  private _enabled = false;
   private mssqlConfig: mssql.config = null;
 
   constructor(readonly moduleName: string) {
@@ -23,7 +22,6 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
   }
 
   protected patch(): typeof mssql {
-    this._enabled = true;
 
     shimmer.wrap(
       this._moduleExports,
@@ -44,13 +42,13 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
   private _patchCreatePool() {
     return (originalConnectionPool: any) => {
       const thisPlugin = this;
-      thisPlugin._logger.debug('MssqlPlugin#patch: patched mssql ConnectionPool');
+      thisPlugin._logger.debug('MssqlPlugin#patch: patching mssql ConnectionPool');
       return function createPool(_config: string | mssql.config) {
 
         if (typeof _config === 'object') {
           thisPlugin.mssqlConfig = _config;
         }
-        
+
         const pool = new originalConnectionPool(...arguments);
         //shimmer.wrap(pool, 'request', thisPlugin._patchRequest());
         return pool;
@@ -62,11 +60,10 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
     return (originalRequest: any) => {
       const thisPlugin = this;
       thisPlugin._logger.debug(
-        'MssqlPlugin#patch: patched mssql pool request'
+        'MssqlPlugin#patch: patching mssql pool request'
       );
       return function request() {
         const request: mssql.Request = new originalRequest(...arguments);
-        //console.log(arguments);
         shimmer.wrap(request, 'query', thisPlugin._patchQuery(request));
         return request;
       };
@@ -77,12 +74,9 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
     return (originalQuery: Function) => {
       const thisPlugin = this;
       thisPlugin._logger.debug(
-        'MssqlPlugin#patch: patched mssql request query'
+        'MssqlPlugin#patch: patching mssql request query'
       );
       return function query(command: string | TemplateStringsArray): Promise<mssql.IResult<any>> {
-        //const query: Promise<mssql.IResult<any>> = originalQuery(command);
-        //console.log(arguments);
-        //console.log(thisPlugin.mssqlConfig);
         const span = thisPlugin._tracer.startSpan(getSpanName(command), {
           kind: SpanKind.CLIENT,
           attributes: {
@@ -90,8 +84,7 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
             ...getConnectionAttributes(thisPlugin.mssqlConfig)
           },
         });
-
-        span.setAttribute(DatabaseAttribute.DB_STATEMENT, thisPlugin.format(command));
+        span.setAttribute(DatabaseAttribute.DB_STATEMENT, thisPlugin.formatDbStatement(command));
 
         const result = originalQuery.apply(request, arguments); 
 
@@ -110,7 +103,7 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
     };
   }
 
-  private format(command: string | TemplateStringsArray) {
+  private formatDbStatement(command: string | TemplateStringsArray) {
     if (typeof command === 'object') {
       return command[0];
     }
@@ -118,10 +111,10 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
   }
 
   protected unpatch(): void {
-    this._enabled = false;
     shimmer.unwrap(this._moduleExports, 'ConnectionPool');
     shimmer.unwrap(this._moduleExports, 'Request');
   }
+
 }
 
 export const plugin = new MssqlPlugin(MssqlPlugin.COMPONENT);
