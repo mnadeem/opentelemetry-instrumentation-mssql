@@ -52,8 +52,7 @@ describe('mssql@6.x', () => {
         context.setGlobalContextManager(contextManager);
         plugin.enable(mssql, provider, logger);
         
-        //start pool 
-        
+        //start pool        
         pool = new mssql.ConnectionPool(config, (err) => {
           if (err) {
             logger.error("SQL Connection Establishment ERROR: %s", err);

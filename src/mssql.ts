@@ -106,10 +106,10 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
     };
   }
 
-
   protected unpatch(): void {
     this._enabled = false;
-    //throw new Error('Method not implemented.');
+    shimmer.unwrap(this._moduleExports, 'ConnectionPool');
+    shimmer.unwrap(this._moduleExports, 'Request');
   }
 }
 
