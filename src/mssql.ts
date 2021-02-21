@@ -90,7 +90,7 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
             ...getConnectionAttributes(thisPlugin.mssqlConfig)
           },
         });
-        
+
         span.setAttribute(DatabaseAttribute.DB_STATEMENT, thisPlugin.format(command));
 
         const result = originalQuery.apply(request, arguments); 

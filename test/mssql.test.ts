@@ -96,9 +96,11 @@ describe('mssql@6.x', () => {
               const request = new mssql.Request(pool);
               request.query('SELECT 1 as number').then((result) => {
                 //console.log(result);
+              }).catch(error =>{
+                console.log("child erro " + error);
               }).finally(() => {
                 const spans = memoryExporter.getFinishedSpans();
-                console.log(spans[0]);
+                //console.log(spans[0]);
                 assert.strictEqual(spans[0].name, 'SELECT');
                 done();
               });
