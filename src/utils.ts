@@ -22,7 +22,6 @@ import {
 import type {
   config,
 } from 'mssql';
-import { MSSQLError } from 'mssql/lib/error';
 
 /**
  * Get an Attributes map from a mysql connection config object
