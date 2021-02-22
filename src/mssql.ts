@@ -11,13 +11,16 @@ import {
 
 import {
     SpanKind,
-    StatusCode,    
+    StatusCode,
+    getSpan, 
+    context  
 } from '@opentelemetry/api';
 
+import { MssqlInstrumentationConfig } from './types';
 import { getConnectionAttributes, getSpanName } from './Spans';
 import { VERSION } from './version';
 
-type Config = InstrumentationConfig;
+type Config = InstrumentationConfig & MssqlInstrumentationConfig;
 
 export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
 
@@ -35,9 +38,10 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
 
     setConfig(config: Config = {}) {
         this._config = Object.assign({}, config);
+        if (config.logger) this._logger = config.logger;
     }
 
-    protected init(): void | InstrumentationModuleDefinition<any> | InstrumentationModuleDefinition<any>[] {
+    protected init(): void | InstrumentationModuleDefinition<typeof mssql> | InstrumentationModuleDefinition<typeof mssql>[] {
         const module = new InstrumentationNodeModuleDefinition<typeof mssql>(
             MssqlInstrumentation.COMPONENT,
             ['*'],
@@ -62,12 +66,15 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
 
     private _createConnectionPoolPatch() {
         return (original: any) => {
-            const thisPlugin = this;
-            thisPlugin._logger.debug('MssqlPlugin#patch: patching mssql ConnectionPool');
+            const thisInstrumentation = this;
+            thisInstrumentation._logger.debug('MssqlPlugin#patch: patching mssql ConnectionPool');
             return function createPool(_config: string | mssql.config) {
+                if (thisInstrumentation._config?.ignoreOrphanedSpans && !getSpan(context.active())) {
+                    return original.apply(thisInstrumentation, arguments);
+                }    
 
                 if (typeof _config === 'object') {
-                    thisPlugin.mssqlConfig = _config;
+                    thisInstrumentation.mssqlConfig = _config;
                 }
                 const pool = new original(...arguments);          
                 return pool;
