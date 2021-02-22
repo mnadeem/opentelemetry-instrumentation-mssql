@@ -20,7 +20,10 @@ const config: mssql.config = {
     encrypt: false
   }
 };
-const instrumentation = new MssqlInstrumentation();
+
+const logger = new ConsoleLogger();
+//const logger = new NoopLogger();
+const instrumentation = new MssqlInstrumentation({logger});
 
 describe('mssql@6.x', () => {
 
@@ -31,7 +34,6 @@ describe('mssql@6.x', () => {
     let contextManager: AsyncHooksContextManager;
 
     const provider = new NodeTracerProvider();
-    const logger = new ConsoleLogger();
     const memoryExporter = new InMemorySpanExporter();
     let pool: mssql.ConnectionPool;
 
