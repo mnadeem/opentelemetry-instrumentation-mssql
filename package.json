@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "test": "npm run compile && ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "clean": "rimraf ./dist/",
     "precompile": "tsc --version",
     "compile": "tsc -p .",

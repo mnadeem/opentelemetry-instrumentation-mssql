@@ -84,7 +84,7 @@ describe('mssql@6.x', () => {
         });
         await pool.connect()
         pool.on('error', err => {
-          console.log(" err " + err);
+          logger.error(" err " + err);
         });
         
       });
