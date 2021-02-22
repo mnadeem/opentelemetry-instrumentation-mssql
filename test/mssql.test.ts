@@ -5,9 +5,14 @@ import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { InMemorySpanExporter, SimpleSpanProcessor } from '@opentelemetry/tracing';
 
 import * as assert from 'assert';
-import * as mssql from 'mssql';
-import * as Docker from './Docker';
 import { MssqlInstrumentation } from '../src/mssql';
+
+const logger = new ConsoleLogger();
+//const logger = new NoopLogger();
+const instrumentation = new MssqlInstrumentation({logger});
+
+import * as Docker from './Docker';
+import * as mssql from 'mssql';
 
 const config: mssql.config = {
   user: process.env.MSSQL_USER || 'sa',
@@ -20,10 +25,6 @@ const config: mssql.config = {
     encrypt: false
   }
 };
-
-const logger = new ConsoleLogger();
-//const logger = new NoopLogger();
-const instrumentation = new MssqlInstrumentation({logger});
 
 describe('mssql@6.x', () => {
 
