@@ -15,7 +15,7 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
     [DatabaseAttribute.DB_SYSTEM]: MssqlPlugin.COMPONENT,
   };
 
-  private mssqlConfig: mssql.config = null;
+  private mssqlConfig: mssql.config = {user: "", password: "", server: ""};
 
   constructor(readonly moduleName: string) {
     super('opentelemetry-plugin-mssql', VERSION);
