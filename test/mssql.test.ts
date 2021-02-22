@@ -1,5 +1,5 @@
 import { context, setSpan } from '@opentelemetry/api';
-import { ConsoleLogger } from '@opentelemetry/core';
+import { ConsoleLogger, LogLevel} from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { InMemorySpanExporter, SimpleSpanProcessor } from '@opentelemetry/tracing';
@@ -33,7 +33,10 @@ describe('mssql@6.x', () => {
   
     let contextManager: AsyncHooksContextManager;
 
-    const provider = new NodeTracerProvider();
+    const provider = new NodeTracerProvider({  
+      logger: logger,   
+      logLevel: LogLevel.DEBUG,      
+    });
     const memoryExporter = new InMemorySpanExporter();
     let pool: mssql.ConnectionPool;
 
@@ -42,13 +45,13 @@ describe('mssql@6.x', () => {
           // this.skip() workaround
           // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
           this.test!.parent!.pending = true;
-          console.log('Skipping tests...');
+          logger.debug('Skipping tests...');
           this.skip();
         }
         provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
         instrumentation.setTracerProvider(provider);
         if (testMssqlLocally) {
-          console.log('Starting mssql...');
+          logger.debug('Starting mssql...');
           Docker.start('mssql');
           // wait 15 seconds for docker container to start
           this.timeout(20000);
@@ -61,7 +64,7 @@ describe('mssql@6.x', () => {
     after(function () {
       if (testMssqlLocally) {
         this.timeout(5000);
-        console.log('Stopping mssql...');
+        logger.debug('Stopping mssql...');
         Docker.cleanUp('mssql');
       }
     });

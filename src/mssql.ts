@@ -41,13 +41,14 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
         if (config.logger) this._logger = config.logger;
     }
 
-    protected init(): void | InstrumentationModuleDefinition<typeof mssql> | InstrumentationModuleDefinition<typeof mssql>[] {
+    protected init(): InstrumentationModuleDefinition<typeof mssql> | InstrumentationModuleDefinition<typeof mssql>[] | void {
         const module = new InstrumentationNodeModuleDefinition<typeof mssql>(
             MssqlInstrumentation.COMPONENT,
             ['*'],
             this.patch.bind(this),
             this.unpatch.bind(this)
         );
+
         return module;
     }
 
