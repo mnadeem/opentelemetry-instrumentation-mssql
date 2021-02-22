@@ -70,7 +70,8 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
             thisInstrumentation._logger.debug('MssqlPlugin#patch: patching mssql ConnectionPool');
             return function createPool(_config: string | mssql.config) {
                 if (thisInstrumentation._config?.ignoreOrphanedSpans && !getSpan(context.active())) {
-                    return original.apply(thisInstrumentation, arguments);
+                    return new original(...arguments);
+                    //return new mssql.ConnectionPool(arguments[0]);
                 }    
 
                 if (typeof _config === 'object') {
@@ -83,39 +84,48 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
     }
 
     private _createRequestPatch() {
-        return (originalRequest: any) => {
-            const thisPlugin = this;
-            thisPlugin._logger.debug(
+        return (original: any) => {
+            const thisInstrumentation = this;
+            thisInstrumentation._logger.debug(
                 'MssqlPlugin#patch: patching mssql pool request'
             );
             return function request() {
-                const request: mssql.Request = new originalRequest(...arguments);
-                thisPlugin._wrap(request, 'query', thisPlugin._patchQuery(request));
+                if (thisInstrumentation._config?.ignoreOrphanedSpans && !getSpan(context.active())) {
+                    //return original.apply(thisInstrumentation, arguments);
+                    return new original(...arguments);
+                }
+                const request: mssql.Request = new original(...arguments);
+                //const request: mssql.Request = original.apply(thisInstrumentation, arguments);
+                thisInstrumentation._wrap(request, 'query', thisInstrumentation._patchQuery(request));
                 return request;
             };
         };
     }
 
-    private _patchQuery(request: mssql.Request) {
+    private _patchQuery(original: mssql.Request) {
         return (originalQuery: Function) => {
-            const thisPlugin = this;
-            thisPlugin._logger.debug(
+            const thisInstrumentation = this;
+            thisInstrumentation._logger.debug(
                 'MssqlPlugin#patch: patching mssql request query'
             );
             return function query(command: string | TemplateStringsArray): Promise<mssql.IResult<any>> {
-                const span = thisPlugin.tracer.startSpan(getSpanName(command), {
+                if (thisInstrumentation._config?.ignoreOrphanedSpans && !getSpan(context.active())) {
+                    return originalQuery.apply(original, arguments);
+                }
+
+                const span = thisInstrumentation.tracer.startSpan(getSpanName(command), {
                     kind: SpanKind.CLIENT,
                     attributes: {
                         ...MssqlInstrumentation.COMMON_ATTRIBUTES,
-                        ...getConnectionAttributes(thisPlugin.mssqlConfig)
+                        ...getConnectionAttributes(thisInstrumentation.mssqlConfig)
                     },
                 });
-                span.setAttribute(DatabaseAttribute.DB_STATEMENT, thisPlugin.formatDbStatement(command));
+                span.setAttribute(DatabaseAttribute.DB_STATEMENT, thisInstrumentation.formatDbStatement(command));
 
-                const result = originalQuery.apply(request, arguments);
+                const result = originalQuery.apply(original, arguments);
 
                 result
-                    .catch((error: { message: any; }) => {
+                    .catch((error: mssql.MSSQLError) => {
                         span.setStatus({
                             code: StatusCode.ERROR,
                             message: error.message,
