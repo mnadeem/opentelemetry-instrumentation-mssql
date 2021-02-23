@@ -79,7 +79,9 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
           },
         });
         span.setAttribute(DatabaseAttribute.DB_STATEMENT, thisPlugin.formatDbStatement(command));
-
+        for (const property in request.parameters) {
+          span.setAttribute(`db.statement.param.${property}`, `${(request.parameters[property].value)}`);
+        }
         const result = originalQuery.apply(request, arguments); 
 
         result        
