@@ -15,8 +15,6 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
     [DatabaseAttribute.DB_SYSTEM]: MssqlPlugin.COMPONENT,
   };
 
-  private mssqlConfig: mssql.config = {user: "", password: "", server: ""};
-
   constructor(readonly moduleName: string) {
     super('opentelemetry-plugin-mssql', VERSION);
   }
@@ -44,10 +42,6 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
       const thisPlugin = this;
       thisPlugin._logger.debug('MssqlPlugin#patch: patching mssql ConnectionPool');
       return function createPool(_config: string | mssql.config) {
-
-        if (typeof _config === 'object') {
-          thisPlugin.mssqlConfig = _config;
-        }
 
         const pool = new originalConnectionPool(...arguments);
         //shimmer.wrap(pool, 'request', thisPlugin._patchRequest());
@@ -81,7 +75,7 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
           kind: SpanKind.CLIENT,
           attributes: {
             ...MssqlPlugin.COMMON_ATTRIBUTES,
-            ...getConnectionAttributes(thisPlugin.mssqlConfig)
+            ...getConnectionAttributes((<any>request).parent!.config)
           },
         });
         span.setAttribute(DatabaseAttribute.DB_STATEMENT, thisPlugin.formatDbStatement(command));
