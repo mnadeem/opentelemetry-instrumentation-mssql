@@ -44,6 +44,10 @@ registerInstrumentations({
 });
 ````
 
+## Sample Trace
+
+![](docs/img/mssql-trace.png)
+
 ## Instrumentation
 
 **Supported**
