@@ -150,7 +150,7 @@ describe('mssql@6.x', () => {
       });
 
      
-      describe('when connectionString is provided for await', () => {
+      describe('when connectionString is provided for query on pool', () => {
         it('should name the span accordingly ', async () => {          
 
             const pool = new mssql.ConnectionPool(`mssql://${config.user}:${config.password}@${config.server}/${config.database}`)
