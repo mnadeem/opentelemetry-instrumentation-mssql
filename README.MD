@@ -8,7 +8,7 @@ There are two variations
 
 This is the **recomended variation**. The source code can be found [here](https://github.com/mnadeem/opentelemetry-instrumentation-mssql/tree/instrumentation)
 
-TODO
+**In Progress**
 
 # Plugin Variation
 
