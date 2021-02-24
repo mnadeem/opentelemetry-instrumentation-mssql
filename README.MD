@@ -6,13 +6,13 @@ There are two variations
 
 # Instrumention Variation
 
-This is the recomended variation. The source code can be found [here](https://github.com/mnadeem/opentelemetry-instrumentation-mssql/tree/instrumentation)
+This is the **recomended variation**. The source code can be found [here](https://github.com/mnadeem/opentelemetry-instrumentation-mssql/tree/instrumentation)
 
 TODO
 
 # Plugin Variation
 
-This variation would be depreciated soon. The source code can be found [here](https://github.com/mnadeem/opentelemetry-instrumentation-mssql/tree/plugin)
+This variation would be **depreciated soon**. The source code can be found [here](https://github.com/mnadeem/opentelemetry-instrumentation-mssql/tree/plugin)
 
 ## Installation
 
@@ -46,12 +46,12 @@ registerInstrumentations({
 
 ## Instrumentation
 
-Supported
+**Supported**
 
 * `Request.query`
 * `ConnectionPool.query`
 
-Future
+**Future**
 
 * `Request.execute`
 * `Request.batch`
