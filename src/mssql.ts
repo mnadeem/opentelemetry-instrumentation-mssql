@@ -44,8 +44,33 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
       return function createPool(_config: string | mssql.config) {
 
         const pool = new originalConnectionPool(...arguments);
-        //shimmer.wrap(pool, 'request', thisPlugin._patchRequest());
+        shimmer.wrap(pool, 'query', thisPlugin._patchPoolQuery(pool));
         return pool;
+      };
+    };
+  }
+
+  private _patchPoolQuery(pool: mssql.ConnectionPool) {
+    return (originalQuery: Function) => {
+      const thisPlugin = this;
+      thisPlugin._logger.debug(
+        'MssqlPlugin#patch: patching mssql pool request'
+      );
+      return function request() {
+        const args = arguments[0];
+        const span = thisPlugin._tracer.startSpan(getSpanName(args[0]), {
+          kind: SpanKind.CLIENT
+        });
+        return originalQuery.apply(pool, arguments)    
+        .catch((error: { message: any; }) => {
+          span.setStatus({
+            code: StatusCode.ERROR,
+            message: error.message,
+          })
+        }).finally(() => {         
+          span.end();         
+        });
+        
       };
     };
   }

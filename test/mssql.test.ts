@@ -129,6 +129,7 @@ describe('mssql@6.x', () => {
           
           try {
             const pool = new mssql.ConnectionPool(`mssql://${config.user}:${config.password}@${config.server}/${config.database}`)
+            //pool.query`select * from mytable where id = ${value}`;
             pool.connect().then(async () => {
               const request = new mssql.Request(pool);
               request.query(`SELECT 1 as number`).then((result) => {
@@ -147,5 +148,22 @@ describe('mssql@6.x', () => {
           }
         });
       });
+
+     
+      describe('when connectionString is provided for await', () => {
+        it('should name the span accordingly ', async () => {          
+
+            const pool = new mssql.ConnectionPool(`mssql://${config.user}:${config.password}@${config.server}/${config.database}`)
+            
+            await pool.connect();
+            const result = await pool.query`SELECT 1 as number`;
+            console.log(result); 
+            const spans = memoryExporter.getFinishedSpans();
+            console.log(spans[0]);
+            assert.strictEqual(spans[0].name, 'SELECT');
+            pool.close();
+        });
+      }); 
+      
 
 });
