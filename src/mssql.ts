@@ -78,10 +78,12 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
             ...getConnectionAttributes((<any>request).parent!.config)
           },
         });
-        span.setAttribute(DatabaseAttribute.DB_STATEMENT, thisPlugin.formatDbStatement(command));
+        var interpolated = thisPlugin.formatDbStatement(command)
         for (const property in request.parameters) {
-          span.setAttribute(`db.statement.param.${property}`, `${(request.parameters[property].value)}`);
+          interpolated = interpolated.replace(`@${property}`, `${(request.parameters[property].value)}`);
         }
+        span.setAttribute(DatabaseAttribute.DB_STATEMENT, interpolated);
+
         const result = originalQuery.apply(request, arguments); 
 
         result        
