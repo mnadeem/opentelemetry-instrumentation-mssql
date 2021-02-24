@@ -159,7 +159,6 @@ describe('mssql@6.x', () => {
             const result = await pool.query`SELECT 1 as number`;
             console.log(result); 
             const spans = memoryExporter.getFinishedSpans();
-            console.log(spans[0]);
             assert.strictEqual(spans[0].name, 'SELECT');
             pool.close();
         });

@@ -2,6 +2,18 @@
 
 This module provides automatic instrumentation for [mssql](https://www.npmjs.com/package/mssql)
 
+There are two variations 
+
+# Instrumention Variation
+
+This is the recomended variation. The source code can be found [here](https://github.com/mnadeem/opentelemetry-instrumentation-mssql/tree/instrumentation)
+
+TODO
+
+# Plugin Variation
+
+This variation would be depreciated soon. The source code can be found [here](https://github.com/mnadeem/opentelemetry-instrumentation-mssql/tree/plugin)
+
 ## Installation
 
 ````
@@ -11,6 +23,7 @@ npm install --save opentelemetry-plugin-mssql
 ## Usage
 
 ````
+import {LogLevel} from '@opentelemetry/core'
 import {NodeTracerProvider} from '@opentelemetry/node'
 import {registerInstrumentations} from '@opentelemetry/instrumentation'
 
@@ -30,3 +43,17 @@ registerInstrumentations({
     tracerProvider: provider
 });
 ````
+
+## Instrumentation
+
+Supported
+
+* `Request.query`
+* `ConnectionPool.query`
+
+Future
+
+* `Request.execute`
+* `Request.batch`
+* `Request.bulk`
+* `ConnectionPool.batch`
