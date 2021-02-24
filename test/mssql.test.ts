@@ -100,7 +100,6 @@ describe('mssql@6.x', () => {
       });
 
       describe('when the query is a string', () => {
-
         it('should name the span accordingly ', done => {
 
           pool.connect().then((result) => {
@@ -111,7 +110,7 @@ describe('mssql@6.x', () => {
               request.query('SELECT 1 as number').then((result) => {
                 //console.log(result);
               }).catch(error =>{
-                console.log("child erro " + error);
+                //console.log("child erro " + error);
               }).finally(() => {
                 const spans = memoryExporter.getFinishedSpans();
                 //console.log(spans[0]);
@@ -124,5 +123,29 @@ describe('mssql@6.x', () => {
 
         });
       });
-    
+
+      describe('when connectionString is provided', () => {
+        it('should name the span accordingly ', done => {
+          
+          try {
+            const pool = new mssql.ConnectionPool(`mssql://${config.user}:${config.password}@${config.server}/${config.database}`)
+            pool.connect().then(async () => {
+              const request = new mssql.Request(pool);
+              request.query(`SELECT 1 as number`).then((result) => {
+                const spans = memoryExporter.getFinishedSpans();
+                //console.log(spans[0]);
+                assert.strictEqual(spans[0].name, 'SELECT');
+              }).catch(error =>{
+                //console.log("child erro " + error);
+              }).finally(() => {
+                pool.close();
+                done();
+              });
+            })
+          } catch (err) {
+            console.error(err);
+          }
+        });
+      });
+
 });
