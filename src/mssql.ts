@@ -4,7 +4,7 @@ import { VERSION } from './version';
 import * as shimmer from 'shimmer';
 
 import { BasePlugin } from '@opentelemetry/core';
-import { StatusCode, SpanKind } from '@opentelemetry/api';
+import { SpanStatusCode, SpanKind, diag} from '@opentelemetry/api';
 import { DatabaseAttribute } from '@opentelemetry/semantic-conventions';
 import { getConnectionAttributes, getSpanName } from './Spans';
 
@@ -40,7 +40,7 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
   private _patchCreatePool() {
     return (originalConnectionPool: any) => {
       const thisPlugin = this;
-      thisPlugin._logger.debug('MssqlPlugin#patch: patching mssql ConnectionPool');
+      diag.debug('MssqlPlugin#patch: patching mssql ConnectionPool');
       return function createPool(_config: string | mssql.config) {
 
         const pool = new originalConnectionPool(...arguments);
@@ -53,7 +53,7 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
   private _patchPoolQuery(pool: mssql.ConnectionPool) {
     return (originalQuery: Function) => {
       const thisPlugin = this;
-      thisPlugin._logger.debug(
+      diag.debug(
         'MssqlPlugin#patch: patching mssql pool request'
       );
       return function request() {
@@ -64,7 +64,7 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
         return originalQuery.apply(pool, arguments)    
         .catch((error: { message: any; }) => {
           span.setStatus({
-            code: StatusCode.ERROR,
+            code: SpanStatusCode.ERROR,
             message: error.message,
           })
         }).finally(() => {         
@@ -78,7 +78,7 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
   private _patchRequest() {
     return (originalRequest: any) => {
       const thisPlugin = this;
-      thisPlugin._logger.debug(
+      diag.debug(
         'MssqlPlugin#patch: patching mssql pool request'
       );
       return function request() {
@@ -92,7 +92,7 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
   private _patchQuery(request: mssql.Request) {
     return (originalQuery: Function) => {
       const thisPlugin = this;
-      thisPlugin._logger.debug(
+      diag.debug(
         'MssqlPlugin#patch: patching mssql request query'
       );
       return function query(command: string | TemplateStringsArray): Promise<mssql.IResult<any>> {
@@ -114,7 +114,7 @@ export class MssqlPlugin extends BasePlugin <typeof mssql> {
         result        
         .catch((error: { message: any; }) => {
           span.setStatus({
-            code: StatusCode.ERROR,
+            code: SpanStatusCode.ERROR,
             message: error.message,
           })
         }).finally(() => {         

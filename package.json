@@ -37,15 +37,15 @@
     "url": "https://github.com/mnadeem/opentelemetry-instrumentation-mssql/issues"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.16.0",
-    "@opentelemetry/core": "^0.16.0",
+    "@opentelemetry/api": "^0.17.0",
+    "@opentelemetry/core": "^0.17.0",
     "shimmer": "^1.2.1"
   },
   "devDependencies": {
-    "@opentelemetry/context-async-hooks": "0.16.0",
-    "@opentelemetry/node": "0.16.0",
-    "@opentelemetry/semantic-conventions": "0.16.0",
-    "@opentelemetry/tracing": "0.16.0",
+    "@opentelemetry/context-async-hooks": "0.17.0",
+    "@opentelemetry/node": "0.17.0",
+    "@opentelemetry/semantic-conventions": "0.17.0",
+    "@opentelemetry/tracing": "0.17.0",
     "@types/mocha": "7.0.2",
     "@types/mssql": "^6.0.7",
     "@types/node": "14.0.27",

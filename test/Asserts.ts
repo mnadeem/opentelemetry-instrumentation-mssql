@@ -1,8 +1,8 @@
 import {
     SpanKind,
-    Attributes,
+    SpanAttributes,
+    SpanStatus,
     Span,
-    Status,
     TimedEvent,
 } from '@opentelemetry/api';
 import * as assert from 'assert';
@@ -15,9 +15,9 @@ import {
 export const assertSpan = (
     span: ReadableSpan,
     kind: SpanKind,
-    attributes: Attributes,
+    attributes: SpanAttributes,
     events: TimedEvent[],
-    status: Status
+    status: SpanStatus
 ) => {
     assert.strictEqual(span.spanContext.traceId.length, 32);
     assert.strictEqual(span.spanContext.spanId.length, 16);

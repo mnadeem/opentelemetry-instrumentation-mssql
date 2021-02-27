@@ -1,4 +1,4 @@
-import { NoopLogger, context, setSpan } from '@opentelemetry/api';
+import { context, setSpan } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { InMemorySpanExporter, SimpleSpanProcessor } from '@opentelemetry/tracing';
@@ -28,8 +28,7 @@ describe('mssql@6.x', () => {
   
     let contextManager: AsyncHooksContextManager;
 
-    const provider = new NodeTracerProvider({ plugins: {} });
-    const logger = new NoopLogger();
+    const provider = new NodeTracerProvider();
     const memoryExporter = new InMemorySpanExporter();
     let pool: mssql.ConnectionPool;
 
@@ -64,14 +63,14 @@ describe('mssql@6.x', () => {
     beforeEach(async () => {
         contextManager = new AsyncHooksContextManager().enable();
         context.setGlobalContextManager(contextManager);
-        plugin.enable(mssql, provider, logger);
+        plugin.enable(mssql, provider);
         
         //start pool        
         pool = new mssql.ConnectionPool(config, (err) => {
           if (err) {
-            logger.error("SQL Connection Establishment ERROR: %s", err);
+            console.debug("SQL Connection Establishment ERROR: %s", err);
           } else {
-            logger.debug('SQL Connection established...');
+            console.debug('SQL Connection established...');
           }
         });
         await pool.connect()
