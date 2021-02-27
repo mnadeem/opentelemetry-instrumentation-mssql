@@ -23,7 +23,6 @@ npm install --save opentelemetry-plugin-mssql
 ## Usage
 
 ````
-import {LogLevel} from '@opentelemetry/core'
 import {NodeTracerProvider} from '@opentelemetry/node'
 import {registerInstrumentations} from '@opentelemetry/instrumentation'
 
@@ -35,8 +34,7 @@ const provider = new NodeTracerProvider ({
             // You may use a package name or absolute path to the file.
             path: "opentelemetry-plugin-mssql",
         },
-    },
-    logLevel: LogLevel.ERROR,      
+    },     
 });
 
 registerInstrumentations({
