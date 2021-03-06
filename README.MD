@@ -8,19 +8,50 @@ There are two variations
 
 This is the **recomended variation**. The source code can be found [here](https://github.com/mnadeem/opentelemetry-instrumentation-mssql/tree/instrumentation)
 
-**In Progress**
-
-## Installation
-
-TODO
 
 ````
 docker run  -p 1433:1433 -d -e ACCEPT_EULA=Y --name otmssql -e SA_PASSWORD=P@ssw0rd mcr.microsoft.com/mssql/server
 ````
 
+## Installation
+
+````bash
+npm install --save opentelemetry-instrumentation-mssql
+````
+
+
 ## Usage
 
-TODO
+````js
+const { NodeTracerProvider } = require('@opentelemetry/node');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const { MssqlInstrumentation } = require('opentelemetry-instrumentation-mssql');
+
+const traceProvider = new NodeTracerProvider({
+  // be sure to disable old plugin
+  plugins: {
+    sequelize: { enabled: false, path: 'opentelemetry-plugin-mssql' }
+  }
+});
+
+registerInstrumentations({
+  traceProvider,
+  instrumentations: [
+    new MssqlInstrumentation({
+      // see under for available configuration
+    })
+  ]
+});
+
+````
+
+### MSSQL Instrumentation Options
+
+MSSQL instrumentation has few options available to choose from. You can set the following:
+
+| Options       | Type                       | Description                                                                               |
+| --------------| ---------------------------| ----------------------------------------------------------------------------------------- |
+
 
 # Plugin Variation
 
@@ -28,13 +59,13 @@ This variation would be **depreciated soon**. The source code can be found [here
 
 ## Installation
 
-````
+````bash
 npm install --save opentelemetry-plugin-mssql
 ````
 
 ## Usage
 
-````
+````js
 import {LogLevel} from '@opentelemetry/core'
 import {NodeTracerProvider} from '@opentelemetry/node'
 import {registerInstrumentations} from '@opentelemetry/instrumentation'
