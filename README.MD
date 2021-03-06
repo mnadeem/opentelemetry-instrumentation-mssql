@@ -91,7 +91,7 @@ registerInstrumentations({
 
 ![](docs/img/mssql-trace.png)
 
-## Instrumentation
+# Instrumentation
 
 **Supported**
 
