@@ -46,7 +46,6 @@ describe('mssql@6.x', () => {
         console.log('Skipping tests...');
         this.skip();
       }
-      instrumentation.enable();
       provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
       if (testMssqlLocally) {
         console.log('Starting mssql...');
@@ -60,7 +59,7 @@ describe('mssql@6.x', () => {
   });
 
   after(function () {
-    instrumentation.disable();
+
     if (testMssqlLocally) {
       this.timeout(5000);
       console.log('Stopping mssql...');
@@ -69,8 +68,10 @@ describe('mssql@6.x', () => {
   });
 
   beforeEach(async () => {
-      contextManager = new AsyncHooksContextManager().enable();
-      context.setGlobalContextManager(contextManager);
+
+      contextManager = new AsyncHooksContextManager();
+      context.setGlobalContextManager(contextManager.enable());
+      instrumentation.enable();
       
       //start pool        
       pool = new mssql.ConnectionPool(config, (err) => {
@@ -88,8 +89,9 @@ describe('mssql@6.x', () => {
     });
   
     afterEach(done => {
-      context.disable();
       memoryExporter.reset();
+      contextManager.disable();
+      instrumentation.disable();
 
       // end pool
       pool.close().finally(() => {
