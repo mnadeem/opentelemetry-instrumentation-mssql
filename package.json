@@ -30,7 +30,7 @@
     "url": "https://github.com/mnadeem/opentelemetry-instrumentation-mssql/issues"
   },
   "scripts": {
-    "test": "npm run compile && ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "test": "ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "clean": "rimraf ./dist/",
     "precompile": "tsc --version",
     "compile": "tsc -p .",

@@ -14,6 +14,10 @@ This is the **recomended variation**. The source code can be found [here](https:
 
 TODO
 
+````
+docker run  -p 1433:1433 -d -e ACCEPT_EULA=Y --name otmssql -e SA_PASSWORD=P@ssw0rd mcr.microsoft.com/mssql/server
+````
+
 ## Usage
 
 TODO

@@ -1,5 +1,3 @@
-import type * as mssql from 'mssql';
-
 import { DatabaseAttribute } from '@opentelemetry/semantic-conventions';
 import {
     InstrumentationBase,
@@ -12,10 +10,11 @@ import {
 import {
     SpanKind,
     StatusCode,
-    getSpan, 
-    context  
+    getSpan,
+    context
 } from '@opentelemetry/api';
 
+import type * as mssql from 'mssql';
 import { MssqlInstrumentationConfig } from './types';
 import { getConnectionAttributes, getSpanName } from './Spans';
 import { VERSION } from './version';
@@ -29,9 +28,6 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
         [DatabaseAttribute.DB_SYSTEM]: MssqlInstrumentation.COMPONENT,
     };
 
-    protected _config!: Config;
-    private mssqlConfig: mssql.config = {user: "", password: "", server: ""};
-
     constructor(config: Config = {}) {
         super('opentelemetry-instrumentation-mssql', VERSION, Object.assign({}, config));
     }
@@ -39,6 +35,10 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
     setConfig(config: Config = {}) {
         this._config = Object.assign({}, config);
         if (config.logger) this._logger = config.logger;
+    }
+
+    private _getConfig(): MssqlInstrumentationConfig {
+        return this._config as MssqlInstrumentationConfig;
     }
 
     protected init(): InstrumentationModuleDefinition<typeof mssql> | InstrumentationModuleDefinition<typeof mssql>[] | void {
@@ -59,74 +59,87 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
 
         this._logger.debug(`applying patch to ${MssqlInstrumentation.COMPONENT}`);
         this.unpatch(moduleExports);
-        this._wrap(moduleExports, 'ConnectionPool', this._createConnectionPoolPatch.bind(this) as any);
-        this._wrap(moduleExports, 'Request', this._createRequestPatch.bind(this) as any);
+        this._wrap(moduleExports, 'ConnectionPool', this._patchCreatePool.bind(this) as any);
+        this._wrap(moduleExports, 'Request', this._patchRequest.bind(this) as any);
 
         return moduleExports;
     }
 
-    private _createConnectionPoolPatch() {
-        return (original: any) => {
+    // global export function
+    private _patchCreatePool() {
+        return (originalConnectionPool: any) => {
             const thisInstrumentation = this;
-            thisInstrumentation._logger.debug('MssqlPlugin#patch: patching mssql ConnectionPool');
+            //diag.debug('MssqlPlugin#patch: patching mssql ConnectionPool');
             return function createPool(_config: string | mssql.config) {
-                if (thisInstrumentation._config?.ignoreOrphanedSpans && !getSpan(context.active())) {
-                    return new original(...arguments);
+                if (thisInstrumentation._getConfig()?.ignoreOrphanedSpans && !getSpan(context.active())) {
+                    return new originalConnectionPool(...arguments);
                     //return new mssql.ConnectionPool(arguments[0]);
-                }    
-
-                if (typeof _config === 'object') {
-                    thisInstrumentation.mssqlConfig = _config;
                 }
-                const pool = new original(...arguments);          
+                const pool = new originalConnectionPool(...arguments);
+                thisInstrumentation._wrap(pool, 'query', thisInstrumentation._patchPoolQuery(pool));
                 return pool;
             };
         };
     }
 
-    private _createRequestPatch() {
-        return (original: any) => {
+    private _patchPoolQuery(pool: mssql.ConnectionPool) {
+        return (originalQuery: Function) => {
             const thisInstrumentation = this;
-            thisInstrumentation._logger.debug(
-                'MssqlPlugin#patch: patching mssql pool request'
-            );
+            //diag.debug('MssqlPlugin#patch: patching mssql pool request');
             return function request() {
-                if (thisInstrumentation._config?.ignoreOrphanedSpans && !getSpan(context.active())) {
-                    //return original.apply(thisInstrumentation, arguments);
-                    return new original(...arguments);
-                }
-                const request: mssql.Request = new original(...arguments);
-                //const request: mssql.Request = original.apply(thisInstrumentation, arguments);
+                const args = arguments[0];
+                const span = thisInstrumentation.tracer.startSpan(getSpanName(args[0]), {
+                    kind: SpanKind.CLIENT
+                });
+                return originalQuery.apply(pool, arguments)
+                    .catch((error: { message: any; }) => {
+                        span.setStatus({
+                            code: StatusCode.ERROR,
+                            message: error.message,
+                        })
+                    }).finally(() => {
+                        span.end();
+                    });
+
+            };
+        };
+    }
+
+    private _patchRequest() {
+        return (originalRequest: any) => {
+            const thisInstrumentation = this;
+            //diag.debug('MssqlPlugin#patch: patching mssql pool request');
+            return function request() {
+                const request: mssql.Request = new originalRequest(...arguments);
                 thisInstrumentation._wrap(request, 'query', thisInstrumentation._patchQuery(request));
                 return request;
             };
         };
     }
 
-    private _patchQuery(original: mssql.Request) {
+    private _patchQuery(request: mssql.Request) {
         return (originalQuery: Function) => {
             const thisInstrumentation = this;
-            thisInstrumentation._logger.debug(
-                'MssqlPlugin#patch: patching mssql request query'
-            );
+            //const thisPlugin = this;
+            //diag.debug('MssqlPlugin#patch: patching mssql request query');
             return function query(command: string | TemplateStringsArray): Promise<mssql.IResult<any>> {
-                if (thisInstrumentation._config?.ignoreOrphanedSpans && !getSpan(context.active())) {
-                    return originalQuery.apply(original, arguments);
-                }
-
                 const span = thisInstrumentation.tracer.startSpan(getSpanName(command), {
                     kind: SpanKind.CLIENT,
                     attributes: {
                         ...MssqlInstrumentation.COMMON_ATTRIBUTES,
-                        ...getConnectionAttributes(thisInstrumentation.mssqlConfig)
+                        ...getConnectionAttributes((<any>request).parent!.config)
                     },
                 });
-                span.setAttribute(DatabaseAttribute.DB_STATEMENT, thisInstrumentation.formatDbStatement(command));
+                var interpolated = thisInstrumentation.formatDbStatement(command)
+                for (const property in request.parameters) {
+                    interpolated = interpolated.replace(`@${property}`, `${(request.parameters[property].value)}`);
+                }
+                span.setAttribute(DatabaseAttribute.DB_STATEMENT, interpolated);
 
-                const result = originalQuery.apply(original, arguments);
+                const result = originalQuery.apply(request, arguments);
 
                 result
-                    .catch((error: mssql.MSSQLError) => {
+                    .catch((error: { message: any; }) => {
                         span.setStatus({
                             code: StatusCode.ERROR,
                             message: error.message,
