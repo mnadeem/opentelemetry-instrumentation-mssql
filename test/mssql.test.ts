@@ -45,6 +45,7 @@ describe('mssql@6.x', () => {
         console.log('Skipping tests...');
         this.skip();
       }
+      instrumentation.setTracerProvider(provider);
       provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
       if (testMssqlLocally) {
         console.log('Starting mssql...');
@@ -120,7 +121,7 @@ describe('mssql@6.x', () => {
               //console.log("child erro " + error);
             }).finally(() => {
               const spans = memoryExporter.getFinishedSpans();
-              //console.log(spans[0]);
+              console.log(spans[0]);
               assert.strictEqual(spans[0].name, 'SELECT');
               done();
             });
@@ -141,7 +142,7 @@ describe('mssql@6.x', () => {
             const request = new mssql.Request(pool);
             request.query(`SELECT 1 as number`).then((result) => {
               const spans = memoryExporter.getFinishedSpans();
-              //console.log(spans[0]);
+              console.log(spans[0]);
               assert.strictEqual(spans[0].name, 'SELECT');
             }).catch(error =>{
               //console.log("child erro " + error);
@@ -156,7 +157,6 @@ describe('mssql@6.x', () => {
       });
     });
 
-   
     describe('when connectionString is provided for query on pool', () => {
       it('should name the span accordingly ', async () => {          
 
@@ -169,6 +169,6 @@ describe('mssql@6.x', () => {
           assert.strictEqual(spans[0].name, 'SELECT');
           pool.close();
       });
-    });   
+    });
 
 });

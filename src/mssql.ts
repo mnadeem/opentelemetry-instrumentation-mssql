@@ -14,6 +14,8 @@ import {
     context
 } from '@opentelemetry/api';
 
+import * as shimmer from 'shimmer';
+
 import type * as mssql from 'mssql';
 import { MssqlInstrumentationConfig } from './types';
 import { getConnectionAttributes, getSpanName } from './Spans';
@@ -58,9 +60,21 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
         }
 
         this._logger.debug(`applying patch to ${MssqlInstrumentation.COMPONENT}`);
+        //console.log(`applying patch to ${MssqlInstrumentation.COMPONENT}`);
         this.unpatch(moduleExports);
-        this._wrap(moduleExports, 'ConnectionPool', this._patchCreatePool.bind(this) as any);
-        this._wrap(moduleExports, 'Request', this._patchRequest.bind(this) as any);
+        shimmer.wrap(
+            moduleExports,
+            'ConnectionPool',
+            this._patchCreatePool() as any
+          );
+      
+          shimmer.wrap(
+            moduleExports,
+            'Request',
+            this._patchRequest() as any
+          );
+        //this._wrap(moduleExports, 'ConnectionPool', this._patchCreatePool.bind(this) as any);
+        //this._wrap(moduleExports, 'Request', this._patchRequest.bind(this) as any);
 
         return moduleExports;
     }
@@ -76,7 +90,8 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
                     //return new mssql.ConnectionPool(arguments[0]);
                 }
                 const pool = new originalConnectionPool(...arguments);
-                thisInstrumentation._wrap(pool, 'query', thisInstrumentation._patchPoolQuery(pool));
+                //thisInstrumentation._wrap(pool, 'query', thisInstrumentation._patchPoolQuery(pool));
+                shimmer.wrap(pool, 'query', thisInstrumentation._patchPoolQuery(pool));
                 return pool;
             };
         };
@@ -90,7 +105,7 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
                 const args = arguments[0];
                 const span = thisInstrumentation.tracer.startSpan(getSpanName(args[0]), {
                     kind: SpanKind.CLIENT
-                });
+                });               
                 return originalQuery.apply(pool, arguments)
                     .catch((error: { message: any; }) => {
                         span.setStatus({
@@ -111,7 +126,8 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
             //diag.debug('MssqlPlugin#patch: patching mssql pool request');
             return function request() {
                 const request: mssql.Request = new originalRequest(...arguments);
-                thisInstrumentation._wrap(request, 'query', thisInstrumentation._patchQuery(request));
+                //thisInstrumentation._wrap(request, 'query', thisInstrumentation._patchQuery(request));
+                shimmer.wrap(request, 'query', thisInstrumentation._patchQuery(request));
                 return request;
             };
         };
@@ -135,7 +151,6 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
                     interpolated = interpolated.replace(`@${property}`, `${(request.parameters[property].value)}`);
                 }
                 span.setAttribute(DatabaseAttribute.DB_STATEMENT, interpolated);
-
                 const result = originalQuery.apply(request, arguments);
 
                 result
@@ -162,10 +177,13 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
 
     protected unpatch(moduleExports: typeof mssql): void {
         if (isWrapped(moduleExports.ConnectionPool)) {
-            this._unwrap(moduleExports, 'ConnectionPool');
+            //this._unwrap(moduleExports, 'ConnectionPool');
+            shimmer.unwrap(moduleExports, 'ConnectionPool');
+            
         }
         if (isWrapped(moduleExports.Request)) {
-            this._unwrap(moduleExports, 'Request');
+            //this._unwrap(moduleExports, 'Request');
+            shimmer.unwrap(moduleExports, 'Request');
         }
     }
 }
