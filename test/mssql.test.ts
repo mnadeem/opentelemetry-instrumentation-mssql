@@ -4,7 +4,7 @@ import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { InMemorySpanExporter, SimpleSpanProcessor } from '@opentelemetry/tracing';
 
-import { MssqlInstrumentation } from '../src/mssql';
+import { MssqlInstrumentation } from '../src';
 
 const logger = new ConsoleLogger();
 //const logger = new NoopLogger();
@@ -12,7 +12,6 @@ const instrumentation = new MssqlInstrumentation({logger});
 import * as assert from 'assert';
 import * as Docker from './Docker';
 import * as mssql from 'mssql';
-//import mssql from 'mssql';
 
 const config: mssql.config = {
   user: process.env.MSSQL_USER || 'sa',
@@ -106,7 +105,7 @@ describe('mssql@6.x', () => {
     it('should have correct moduleName', () => {
       assert.strictEqual(instrumentation.instrumentationName, 'opentelemetry-instrumentation-mssql');
     });
-
+    
     describe('when the query is a string', () => {
       it('should name the span accordingly ', done => {
 
