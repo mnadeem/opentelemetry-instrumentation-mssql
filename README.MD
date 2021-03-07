@@ -102,7 +102,7 @@ registerInstrumentations({
 * `Request.bulk`
 * `ConnectionPool.batch`
 
-* Misc
+# Misc
 
 Start mssql server as follows (*for development*)
 
