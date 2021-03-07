@@ -2,16 +2,18 @@
 
 This module provides automatic instrumentation for [mssql](https://www.npmjs.com/package/mssql)
 
-There are two variations 
+Start mssql server as follows (*for development*)
+
+````bash
+docker run  -p 1433:1433 -d -e ACCEPT_EULA=Y --name otmssql -e SA_PASSWORD=P@ssw0rd mcr.microsoft.com/mssql/server
+````
+
+There are :two: variations 
 
 # Instrumention Variation
 
 This is the **recomended variation**. The source code can be found [here](https://github.com/mnadeem/opentelemetry-instrumentation-mssql/tree/instrumentation)
 
-
-````
-docker run  -p 1433:1433 -d -e ACCEPT_EULA=Y --name otmssql -e SA_PASSWORD=P@ssw0rd mcr.microsoft.com/mssql/server
-````
 
 ## Installation
 
