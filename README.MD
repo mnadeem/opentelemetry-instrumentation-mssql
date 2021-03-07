@@ -64,13 +64,13 @@ This variation would be **depreciated soon**. The source code can be found [here
 
 ## Installation
 
-````
+````bash
 npm install --save opentelemetry-plugin-mssql
 ````
 
 ## Usage
 
-````
+````js
 import {LogLevel} from '@opentelemetry/core'
 import {NodeTracerProvider} from '@opentelemetry/node'
 import {registerInstrumentations} from '@opentelemetry/instrumentation'
@@ -104,7 +104,7 @@ registerInstrumentations({
 
 ![](docs/img/mssql-trace.png)
 
-## Instrumentation
+# Instrumentation
 
 **Supported**
 

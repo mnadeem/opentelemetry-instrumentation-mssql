@@ -1,29 +1,50 @@
 {
   "name": "opentelemetry-instrumentation-mssql",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "0.3.0",
+  "description": "open telemetry instrumentation for the `mssql` module",
+  "keywords": [
+    "mssql",
+    "opentelemetry"
+  ],
+  "author": {
+    "name": "Mohammad Nadeem",
+    "email": "coolmind182006@gmail.com",
+    "url": "https://github.com/mnadeem/opentelemetry-instrumentation-mssql"
+  },
+  "homepage": "https://github.com/mnadeem/opentelemetry-instrumentation-mssql",
+  "license": "Apache-2.0",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "LICENSE",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mnadeem/opentelemetry-instrumentation-mssql.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mnadeem/opentelemetry-instrumentation-mssql/issues"
+  },
   "scripts": {
-    "test": "npm run compile && ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "test": "ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "clean": "rimraf ./dist/",
     "precompile": "tsc --version",
     "compile": "tsc -p .",
     "prepare": "npm run compile"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "@opentelemetry/api": "^0.15.0",
-    "@opentelemetry/core": "^0.15.0",
-    "@opentelemetry/instrumentation": "^0.15.0",
-    "shimmer": "^1.2.1"
+    "@opentelemetry/api": "^0.18.0",
+    "@opentelemetry/instrumentation": "^0.18.0",
+    "@opentelemetry/semantic-conventions": "^0.18.0"
   },
   "devDependencies": {
-    "@opentelemetry/context-async-hooks": "0.15.0",
-    "@opentelemetry/node": "0.15.0",
-    "@opentelemetry/semantic-conventions": "0.15.0",
-    "@opentelemetry/tracing": "0.15.0",
+    "@opentelemetry/context-async-hooks": "0.18.0",
+    "@opentelemetry/node": "0.18.0",
+    "@opentelemetry/tracing": "0.18.0",
     "@types/mocha": "7.0.2",
     "@types/mssql": "^6.0.7",
     "@types/node": "14.0.27",

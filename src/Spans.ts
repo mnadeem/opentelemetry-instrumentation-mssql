@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Attributes } from '@opentelemetry/api';
+import { SpanAttributes } from '@opentelemetry/api';
 import {
   DatabaseAttribute,
   GeneralAttribute,
@@ -30,7 +30,7 @@ import type {
  */
 export function getConnectionAttributes(
   config: config
-): Attributes {
+): SpanAttributes {
   const { server, port, database, user } = getConfig(config);
 
   return {
