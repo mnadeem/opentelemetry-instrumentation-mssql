@@ -8,15 +8,46 @@ There are :two: variations
 
 This is the **recomended variation**. The source code can be found [here](https://github.com/mnadeem/opentelemetry-instrumentation-mssql/tree/instrumentation)
 
-**In Progress**
 
 ## Installation
 
-TODO
+````bash
+npm install --save opentelemetry-instrumentation-mssql
+````
 
 ## Usage
 
-TODO
+````js
+const { NodeTracerProvider } = require('@opentelemetry/node');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const { MssqlInstrumentation } = require('opentelemetry-instrumentation-mssql');
+
+const traceProvider = new NodeTracerProvider({
+  // be sure to disable old plugin
+  plugins: {
+    sequelize: { enabled: false, path: 'opentelemetry-plugin-mssql' }
+  }
+});
+
+registerInstrumentations({
+  traceProvider,
+  instrumentations: [
+    new MssqlInstrumentation({
+      // see under for available configuration
+    })
+  ]
+});
+
+````
+
+### MSSQL Instrumentation Options
+
+MSSQL instrumentation has few options available to choose from. You can set the following:
+
+| Options       | Type                       | Description                                                                               |
+| --------------| ---------------------------| ----------------------------------------------------------------------------------------- |
+| `ignoreOrphanedSpans` | `boolean` | Set to true if you only want to trace operation which has parent spans |
+
 
 # Plugin Variation
 
