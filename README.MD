@@ -9,9 +9,6 @@ There are :two: variations
 This is the **recomended variation**. The source code can be found [here](https://github.com/mnadeem/opentelemetry-instrumentation-mssql/tree/instrumentation)
 
 
-````
-docker run  -p 1433:1433 -d -e ACCEPT_EULA=Y --name otmssql -e SA_PASSWORD=P@ssw0rd mcr.microsoft.com/mssql/server
-````
 
 ## Installation
 
@@ -52,6 +49,8 @@ MSSQL instrumentation has few options available to choose from. You can set the 
 | Options       | Type                       | Description                                                                               |
 | --------------| ---------------------------| ----------------------------------------------------------------------------------------- |
 | `ignoreOrphanedSpans` | `boolean` | Set to true if you only want to trace operation which has parent spans |
+
+## Versions
 
 | Instrumentation Version       | OTEL Version                       |
 | --------------| ---------------------------|
