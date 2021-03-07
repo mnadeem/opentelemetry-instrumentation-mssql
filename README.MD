@@ -102,7 +102,7 @@ registerInstrumentations({
 | `0.3.0` | `0.17.0` |
 
 
-## Sample Trace
+# Sample Trace
 
 ![](docs/img/mssql-trace.png)
 
