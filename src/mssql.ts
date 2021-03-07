@@ -9,9 +9,10 @@ import {
 
 import {
     SpanKind,
-    StatusCode,
+    SpanStatusCode,
     getSpan,
-    context
+    context,
+    diag
 } from '@opentelemetry/api';
 
 import type * as mssql from 'mssql';
@@ -30,7 +31,6 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
 
     constructor(config: Config = {}) {
         super('opentelemetry-instrumentation-mssql', VERSION, Object.assign({}, config));
-        if (config.logger) this._logger = config.logger;
     }
 
     private _getConfig(): MssqlInstrumentationConfig {
@@ -52,9 +52,7 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
         if (moduleExports === undefined || moduleExports === null) {
             return moduleExports;
         }
-
-        this._logger.debug(`applying patch to ${MssqlInstrumentation.COMPONENT}`);
-        //console.log(`applying patch to ${MssqlInstrumentation.COMPONENT}`);
+        diag.debug(`applying patch to ${MssqlInstrumentation.COMPONENT}`);
         this.unpatch(moduleExports);
         /** 
         shimmer.wrap(
@@ -78,7 +76,7 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
     private _patchCreatePool() {
         return (originalConnectionPool: any) => {
             const thisInstrumentation = this;
-            //diag.debug('MssqlPlugin#patch: patching mssql ConnectionPool');
+            diag.debug('MssqlPlugin#patch: patching mssql ConnectionPool');
             return function createPool(_config: string | mssql.config) {
                 if (thisInstrumentation._getConfig()?.ignoreOrphanedSpans && !getSpan(context.active())) {
                     return new originalConnectionPool(...arguments);
@@ -95,7 +93,7 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
     private _patchPoolQuery(pool: mssql.ConnectionPool) {
         return (originalQuery: Function) => {
             const thisInstrumentation = this;
-            //diag.debug('MssqlPlugin#patch: patching mssql pool request');
+            diag.debug('MssqlPlugin#patch: patching mssql pool request');
             return function request() {
                 if (thisInstrumentation.shouldIgnoreOrphanSpans(thisInstrumentation._getConfig())) {
                     return originalQuery.apply(pool, arguments);
@@ -107,7 +105,7 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
                 return originalQuery.apply(pool, arguments)
                     .catch((error: { message: any; }) => {
                         span.setStatus({
-                            code: StatusCode.ERROR,
+                            code: SpanStatusCode.ERROR,
                             message: error.message,
                         })
                     }).finally(() => {
@@ -121,7 +119,7 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
     private _patchRequest() {
         return (originalRequest: any) => {
             const thisInstrumentation = this;
-            //diag.debug('MssqlPlugin#patch: patching mssql pool request');
+            diag.debug('MssqlPlugin#patch: patching mssql pool request');
             return function request() {
                 const request: mssql.Request = new originalRequest(...arguments);
                 thisInstrumentation._wrap(request, 'query', thisInstrumentation._patchQuery(request));
@@ -134,8 +132,8 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
     private _patchQuery(request: mssql.Request) {
         return (originalQuery: Function) => {
             const thisInstrumentation = this;
-            //const thisPlugin = this;
-            //diag.debug('MssqlPlugin#patch: patching mssql request query');
+
+            diag.debug('MssqlPlugin#patch: patching mssql request query');
             return function query(command: string | TemplateStringsArray): Promise<mssql.IResult<any>> {
                 if (thisInstrumentation.shouldIgnoreOrphanSpans(thisInstrumentation._getConfig())) {
                     return originalQuery.apply(request, arguments);
@@ -157,7 +155,7 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
                 result
                     .catch((error: { message: any; }) => {
                         span.setStatus({
-                            code: StatusCode.ERROR,
+                            code: SpanStatusCode.ERROR,
                             message: error.message,
                         })
                     }).finally(() => {

@@ -1,14 +1,13 @@
 import { context, setSpan } from '@opentelemetry/api';
-import { ConsoleLogger} from '@opentelemetry/core';
+
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { InMemorySpanExporter, SimpleSpanProcessor } from '@opentelemetry/tracing';
 
 import { MssqlInstrumentation } from '../src';
 
-const logger = new ConsoleLogger();
 //const logger = new NoopLogger();
-const instrumentation = new MssqlInstrumentation({logger});
+const instrumentation = new MssqlInstrumentation({});
 import * as assert from 'assert';
 import * as Docker from './Docker';
 import * as mssql from 'mssql';
@@ -161,7 +160,7 @@ describe('mssql@6.x', () => {
           const pool = new mssql.ConnectionPool(`mssql://${config.user}:${config.password}@${config.server}/${config.database}`)
           
           await pool.connect();
-          const result = await pool.query`SELECT 1 as number`;
+          await pool.query`SELECT 1 as number`;
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans[0].name, 'SELECT');
           pool.close();
