@@ -26,7 +26,7 @@ const { MssqlInstrumentation } = require('opentelemetry-instrumentation-mssql');
 const traceProvider = new NodeTracerProvider({
   // be sure to disable old plugin
   plugins: {
-    sequelize: { enabled: false, path: 'opentelemetry-plugin-mssql' }
+    mssql: { enabled: false, path: 'opentelemetry-plugin-mssql' }
   }
 });
 
