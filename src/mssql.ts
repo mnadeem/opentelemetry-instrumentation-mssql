@@ -30,10 +30,6 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
 
     constructor(config: Config = {}) {
         super('opentelemetry-instrumentation-mssql', VERSION, Object.assign({}, config));
-    }
-
-    setConfig(config: Config = {}) {
-        this._config = Object.assign({}, config);
         if (config.logger) this._logger = config.logger;
     }
 
@@ -101,6 +97,9 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
             const thisInstrumentation = this;
             //diag.debug('MssqlPlugin#patch: patching mssql pool request');
             return function request() {
+                if (thisInstrumentation.shouldIgnoreOrphanSpans(thisInstrumentation._getConfig())) {
+                    return originalQuery.apply(pool, arguments);
+                }
                 const args = arguments[0];
                 const span = thisInstrumentation.tracer.startSpan(getSpanName(args[0]), {
                     kind: SpanKind.CLIENT
@@ -138,6 +137,9 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
             //const thisPlugin = this;
             //diag.debug('MssqlPlugin#patch: patching mssql request query');
             return function query(command: string | TemplateStringsArray): Promise<mssql.IResult<any>> {
+                if (thisInstrumentation.shouldIgnoreOrphanSpans(thisInstrumentation._getConfig())) {
+                    return originalQuery.apply(request, arguments);
+                }
                 const span = thisInstrumentation.tracer.startSpan(getSpanName(command), {
                     kind: SpanKind.CLIENT,
                     attributes: {
@@ -165,6 +167,10 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
                 return result;
             };
         };
+    }
+
+    private shouldIgnoreOrphanSpans(config: MssqlInstrumentationConfig) {
+        return config?.ignoreOrphanedSpans && !getSpan(context.active())
     }
 
     private formatDbStatement(command: string | TemplateStringsArray) {

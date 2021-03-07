@@ -121,7 +121,6 @@ describe('mssql@6.x', () => {
               //console.log("child erro " + error);
             }).finally(() => {
               const spans = memoryExporter.getFinishedSpans();
-              console.log(spans[0]);
               assert.strictEqual(spans[0].name, 'SELECT');
               done();
             });
@@ -142,7 +141,6 @@ describe('mssql@6.x', () => {
             const request = new mssql.Request(pool);
             request.query(`SELECT 1 as number`).then((result) => {
               const spans = memoryExporter.getFinishedSpans();
-              console.log(spans[0]);
               assert.strictEqual(spans[0].name, 'SELECT');
             }).catch(error =>{
               //console.log("child erro " + error);
@@ -164,7 +162,6 @@ describe('mssql@6.x', () => {
           
           await pool.connect();
           const result = await pool.query`SELECT 1 as number`;
-          console.log(result); 
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans[0].name, 'SELECT');
           pool.close();

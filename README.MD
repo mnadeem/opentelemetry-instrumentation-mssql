@@ -51,7 +51,7 @@ MSSQL instrumentation has few options available to choose from. You can set the 
 
 | Options       | Type                       | Description                                                                               |
 | --------------| ---------------------------| ----------------------------------------------------------------------------------------- |
-| `ignoreOrphanedSpans` | `string` |  |
+| `ignoreOrphanedSpans` | `boolean` | Set to true if you only want to trace operation which has parent spans |
 
 # Plugin Variation
 
