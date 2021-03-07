@@ -161,7 +161,7 @@ describe('mssql@6.x', () => {
           const pool = new mssql.ConnectionPool(`mssql://${config.user}:${config.password}@${config.server}/${config.database}`)
           
           await pool.connect();
-          const result = await pool.query`SELECT 1 as number`;
+          await pool.query`SELECT 1 as number`;
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans[0].name, 'SELECT');
           pool.close();
