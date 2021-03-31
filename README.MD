@@ -125,3 +125,7 @@ Start mssql server as follows (*for development*)
 ````bash
 docker run  -p 1433:1433 -d -e ACCEPT_EULA=Y --name otmssql -e SA_PASSWORD=P@ssw0rd mcr.microsoft.com/mssql/server
 ````
+
+# Example
+
+* [nodejs-opentelemetry-tempo](https://github.com/mnadeem/nodejs-opentelemetry-tempo)
