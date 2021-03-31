@@ -104,3 +104,7 @@ registerInstrumentations({
 * `Request.batch`
 * `Request.bulk`
 * `ConnectionPool.batch`
+
+# Example
+
+* [nodejs-opentelemetry-tempo](https://github.com/mnadeem/nodejs-opentelemetry-tempo)
