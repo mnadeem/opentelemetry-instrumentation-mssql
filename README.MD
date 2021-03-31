@@ -15,7 +15,6 @@ This is the **recomended variation**. The source code can be found [here](https:
 npm install --save opentelemetry-instrumentation-mssql
 ````
 
-
 ## Usage
 
 ````js
