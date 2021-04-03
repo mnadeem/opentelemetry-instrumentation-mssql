@@ -53,9 +53,9 @@ MSSQL instrumentation has few options available to choose from. You can set the 
 
 | Instrumentation Version       | OTEL Version                       |
 | --------------| ---------------------------|
-| `0.0.1` | `0.15.0` |
-| `0.1.0` | `0.16.0` |
-| `0.2.0` | `0.17.0` |
+| `0.0.2` | `0.15.0` |
+| `0.1.1` | `0.16.0` |
+| `0.2.1` | `0.17.0` |
 | `0.3.1` | `0.18.0` |
 
 # Plugin Variation
