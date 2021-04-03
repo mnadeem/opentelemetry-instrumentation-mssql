@@ -56,7 +56,7 @@ MSSQL instrumentation has few options available to choose from. You can set the 
 | `0.0.1` | `0.15.0` |
 | `0.1.0` | `0.16.0` |
 | `0.2.0` | `0.17.0` |
-| `0.3.0` | `0.18.0` |
+| `0.3.1` | `0.18.0` |
 
 # Plugin Variation
 
@@ -110,6 +110,8 @@ registerInstrumentations({
 
 * `Request.query`
 * `ConnectionPool.query`
+* `ConnectionPool.request`
+
 
 **Future**
 

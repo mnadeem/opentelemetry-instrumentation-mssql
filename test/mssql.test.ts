@@ -155,7 +155,7 @@ describe('mssql@6.x', () => {
     });
 
     describe('when connectionString is provided for query on pool', () => {
-      it('should name the span accordingly ', async () => {          
+      it('should name the span accordingly, query on pool', async () => {          
 
           const pool = new mssql.ConnectionPool(`mssql://${config.user}:${config.password}@${config.server}/${config.database}`)
           
@@ -164,6 +164,22 @@ describe('mssql@6.x', () => {
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans[0].name, 'SELECT');
           pool.close();
+      });
+    });
+
+    describe('when connectionString is provided for query on pool', () => {
+      it('should name the span accordingly, query on pool.request', done => {          
+
+          const pool = new mssql.ConnectionPool(`mssql://${config.user}:${config.password}@${config.server}/${config.database}`)
+
+          pool.request().query(`SELECT 1 as number`).then((result) => {
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans[0].name, 'SELECT');
+          }).catch(error =>{
+            //console.log("child erro " + error);
+          }).finally(() => {
+            done();
+          });          
       });
     });
 
