@@ -84,6 +84,7 @@ export class MssqlInstrumentation extends InstrumentationBase<typeof mssql> {
                 }
                 const pool = new originalConnectionPool(...arguments);
                 thisInstrumentation._wrap(pool, 'query', thisInstrumentation._patchPoolQuery(pool));
+                thisInstrumentation._wrap(pool, 'Request', thisInstrumentation._patchRequest() as any);
                 //shimmer.wrap(pool, 'query', thisInstrumentation._patchPoolQuery(pool));
                 return pool;
             };
